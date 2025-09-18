@@ -1,4 +1,4 @@
-package Model;
+package com.blackjack.model;
 
 public class Carta {
     public enum Palo { PICAS, CORAZONES, DIAMANTES, TREBOLES }
