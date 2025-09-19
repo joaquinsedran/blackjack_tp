@@ -18,7 +18,6 @@ public class BlackjackController {
         boolean jugarOtraVez = true;
 
         while (jugarOtraVez && !blackjackService.jugadorEnBancarrota()) {
-            // FASE 1: APUESTA
             boolean apuestaValida = false;
             while (!apuestaValida) {
                 int apuesta = consolaView.pedirApuesta(
@@ -34,21 +33,38 @@ public class BlackjackController {
                 }
             }
 
-            // FASE 2: JUEGO
             blackjackService.iniciarPartida();
 
             while (!blackjackService.isJuegoTerminado()) {
-                consolaView.mostrarOpciones();
+                consolaView.mostrarOpciones(
+                        blackjackService.puedeDoblar(),
+                        blackjackService.puedeDividir()
+                );
+
                 int opcion = consolaView.leerOpcion();
 
                 switch (opcion) {
-                    case 1: // Pedir carta
+                    case 1:
                         blackjackService.jugadorPideCarta();
                         break;
-                    case 2: // Plantarse
+                    case 2:
                         blackjackService.jugadorSePlanta();
                         break;
-                    case 3: // Ver reglas
+                    case 3:
+                        if (blackjackService.puedeDoblar()) {
+                            blackjackService.doblarApuesta();
+                        } else {
+                            consolaView.mostrarMensaje("❌ No puedes doblar en este momento.");
+                        }
+                        break;
+                    case 4:
+                        if (blackjackService.puedeDividir()) {
+                            blackjackService.dividir();
+                        } else {
+                            consolaView.mostrarMensaje("❌ No puedes dividir en este momento.");
+                        }
+                        break;
+                    case 5:
                         consolaView.mostrarReglas();
                         break;
                     default:
@@ -56,23 +72,19 @@ public class BlackjackController {
                 }
             }
 
-            // Verificar si el jugador quedó en bancarrota
             if (blackjackService.jugadorEnBancarrota()) {
                 consolaView.mostrarBancarrota();
                 break;
             }
 
-            // Preguntar si quiere jugar otra vez
             consolaView.mostrarDinero(blackjackService.getDineroJugador());
             jugarOtraVez = consolaView.preguntarJugarOtraVez();
 
             if (jugarOtraVez) {
-                // Reiniciar el servicio para nueva partida
                 blackjackService = new BlackjackService();
             }
         }
 
-        // Mensaje final
         if (blackjackService.jugadorEnBancarrota()) {
             consolaView.mostrarBancarrota();
         } else {

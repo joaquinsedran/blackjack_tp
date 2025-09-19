@@ -1,5 +1,8 @@
 package com.blackjack.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Jugador {
     private String nombre;
     private Mano mano;
@@ -9,7 +12,6 @@ public class Jugador {
     private static final int FICHA_MAXIMA = 500;
     private static final int DINERO_INICIAL = 5000;
 
-    // Constructor - Ahora con dinero inicial de casino
     public Jugador(String nombre) {
         this.nombre = nombre;
         this.mano = new Mano();
@@ -35,23 +37,33 @@ public class Jugador {
         return DINERO_INICIAL;
     }
 
-    // Apostar con validación de fichas de casino
+    // Apostar con validación (sin límite máximo excepto el dinero disponible)
     public boolean apostar(int cantidad) {
         if (esApuestaValida(cantidad)) {
-            apuestaActual = cantidad;  // ← ¡DEBE ser 'cantidad', no 500!
-            dinero -= cantidad;        // ← ¡DEBE restar 'cantidad', no 500!
+            apuestaActual = cantidad;
+            dinero -= cantidad;
             System.out.println(nombre + " apuesta $" + cantidad + " | Fichas: " + convertirAFichas(cantidad));
             return true;
         }
         return false;
     }
 
-    // Verificar si la apuesta es válida (múltiplo de 5, entre 5-500)
+    // Verificar si la apuesta es válida (múltiplo de 5, mínimo 5, máximo el dinero disponible)
     public boolean esApuestaValida(int cantidad) {
         return cantidad >= 5 &&
-                cantidad <= FICHA_MAXIMA &&
                 cantidad % 5 == 0 &&
                 cantidad <= dinero;
+    }
+
+    // Doblar apuesta
+    public boolean doblarApuesta() {
+        if (dinero >= apuestaActual) {
+            dinero -= apuestaActual;
+            apuestaActual *= 2;
+            System.out.println("Apuesta doblada a $" + apuestaActual);
+            return true;
+        }
+        return false;
     }
 
     // Recibir pago según reglas de casino
@@ -73,19 +85,19 @@ public class Jugador {
         int temp = cantidad;
 
         if (temp >= 500) {
-            fichas.append("🔵×").append(temp / 500).append(" ");
+            fichas.append("×").append(temp / 500).append(" ");
             temp %= 500;
         }
         if (temp >= 100) {
-            fichas.append("🔴×").append(temp / 100).append(" ");
+            fichas.append("×").append(temp / 100).append(" ");
             temp %= 100;
         }
         if (temp >= 25) {
-            fichas.append("🟢×").append(temp / 25).append(" ");
+            fichas.append("×").append(temp / 25).append(" ");
             temp %= 25;
         }
         if (temp >= 5) {
-            fichas.append("⚫×").append(temp / 5).append(" ");
+            fichas.append("×").append(temp / 5).append(" ");
         }
 
         return fichas.toString().trim();

@@ -11,22 +11,18 @@ public class ConsolaView {
 
     // ===== NUEVOS MÉTODOS PARA APUESTAS =====
     public int pedirApuesta(int dineroDisponible, int fichaMaxima) {
-        System.out.println("\n💎 --- HACER APUESTA --- 💎");
-        System.out.println("💰 Dinero disponible: $" + dineroDisponible);
-        System.out.println("🎯 Ficha máxima: $" + fichaMaxima);
-        System.out.println("🎲 Fichas disponibles: 🔵$500 🔴$100 🟢$25 ⚫$5");
-        System.out.print("¿Cuánto quieres apostar? (múltiplo de 5, min $5, max $" + fichaMaxima + "): ");
+        System.out.println("\n--- HACER APUESTA ---");
+        System.out.println("Dinero disponible: $" + dineroDisponible);
+        System.out.println("Ficha máxima: $" + fichaMaxima);
+        System.out.println("Fichas disponibles: $500 - $100 - $25 - $5");
+        System.out.print("¿Cuánto quieres apostar? (múltiplo de 5, min $5): ");
 
         try {
             int apuesta = Integer.parseInt(scanner.nextLine());
 
-            // Validar apuesta
+            // Validar apuesta (sin máximo, solo múltiplo de 5 y mínimo 5)
             if (apuesta < 5) {
                 System.out.println("❌ Apuesta mínima: $5");
-                return -1;
-            }
-            if (apuesta > fichaMaxima) {
-                System.out.println("❌ Apuesta máxima: $" + fichaMaxima);
                 return -1;
             }
             if (apuesta % 5 != 0) {
@@ -47,16 +43,16 @@ public class ConsolaView {
     }
 
     public void mostrarDinero(int dinero) {
-        System.out.println("💵 Dinero actual: $" + dinero);
+        System.out.println("Dinero actual: $" + dinero);
     }
 
     public void mostrarApuesta(int apuesta) {
-        System.out.println("🎯 Apuesta actual: $" + apuesta);
+        System.out.println("Apuesta actual: $" + apuesta);
     }
 
     public void mostrarBancarrota() {
-        System.out.println("\n💸 ¡BANCARROTA! No tienes más dinero para apostar.");
-        System.out.println("😞 El juego ha terminado para ti.");
+        System.out.println("\n❌ ¡BANCARROTA! No tienes más dinero para apostar.");
+        System.out.println("El juego ha terminado para ti.");
     }
 
     public void mostrarFichas(int cantidad) {
@@ -64,35 +60,43 @@ public class ConsolaView {
         int temp = cantidad;
 
         if (temp >= 500) {
-            System.out.print("🔵×" + (temp / 500) + " ");
+            System.out.print("×" + (temp / 500) + " ");
             temp %= 500;
         }
         if (temp >= 100) {
-            System.out.print("🔴×" + (temp / 100) + " ");
+            System.out.print("×" + (temp / 100) + " ");
             temp %= 100;
         }
         if (temp >= 25) {
-            System.out.print("🟢×" + (temp / 25) + " ");
+            System.out.print("×" + (temp / 25) + " ");
             temp %= 25;
         }
         if (temp >= 5) {
-            System.out.print("⚫×" + (temp / 5) + " ");
+            System.out.print("×" + (temp / 5) + " ");
         }
         System.out.println();
     }
 
-    // ===== MÉTODOS EXISTENTES (se mantienen igual) =====
+    // ===== MÉTODOS EXISTENTES MODIFICADOS =====
     public void mostrarBienvenida() {
-        System.out.println("🎰 ¡BIENVENIDO AL BLACKJACK DE CASINO! 🎰");
-        System.out.println("=========================================");
+        System.out.println("¡BIENVENIDO AL BLACKJACK!");
+        System.out.println("========================");
     }
 
-    public void mostrarOpciones() {
+    public void mostrarOpciones(boolean puedeDoblar, boolean puedeDividir) {
         System.out.println("\n--- ¿Qué quieres hacer? ---");
         System.out.println("1. Pedir carta");
         System.out.println("2. Plantarse");
-        System.out.println("3. Ver reglas");
-        System.out.print("Elige una opción (1-3): ");
+
+        if (puedeDoblar) {
+            System.out.println("3. Doblar apuesta");
+        }
+        if (puedeDividir) {
+            System.out.println("4. Dividir");
+        }
+
+        System.out.println("5. Ver reglas");
+        System.out.print("Elige una opción (1-5): ");
     }
 
     public int leerOpcion() {
@@ -104,12 +108,14 @@ public class ConsolaView {
     }
 
     public void mostrarReglas() {
-        System.out.println("\n--- REGLAS DEL CASINO ---");
-        System.out.println("• Apuesta mínima: $5, máxima: $500");
+        System.out.println("\n--- REGLAS DEL BLACKJACK ---");
+        System.out.println("• Apuesta mínima: $5");
         System.out.println("• Blackjack paga 3:2 (apuesta $100 → ganas $150)");
         System.out.println("• Victoria normal paga 1:1");
         System.out.println("• Empate: devuelve la apuesta");
         System.out.println("• Si te pasas de 21, pierdes la apuesta");
+        System.out.println("• Puedes doblar tu apuesta después de recibir las dos primeras cartas");
+        System.out.println("• Puedes dividir si tienes dos cartas del mismo valor");
         System.out.println("---------------------------");
     }
 
@@ -124,7 +130,7 @@ public class ConsolaView {
     }
 
     public void mostrarDespedida() {
-        System.out.println("\n¡Gracias por jugar! ¡Hasta pronto! 👋");
+        System.out.println("\n¡Gracias por jugar! ¡Hasta pronto!");
     }
 
     public void cerrar() {
