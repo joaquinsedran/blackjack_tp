@@ -18,13 +18,42 @@ public class BlackjackService {
         this.apuestaHecha = false;
     }
 
-    // ===== MÉTODOS DE APUESTAS =====
-    public boolean hacerApuesta(int cantidad) {
-        if (jugador.apostar(cantidad)) {
-            apuestaHecha = true;
-            return true;
+    // ===== MÉTODO PRINCIPAL CORREGIDO =====
+    public boolean iniciarPartida(int apuesta) {
+        // Primero validar la apuesta
+        if (!hacerApuesta(apuesta)) {
+            System.out.println("❌ No se pudo hacer la apuesta de $" + apuesta);
+            return false;
         }
-        return false;
+
+        System.out.println("=== NUEVA PARTIDA ===");
+        System.out.println("Apuesta: $" + jugador.getApuestaActual());
+
+        // Limpiar manos y resetear estado
+        jugador.getMano().limpiar();
+        crupier.getMano().limpiar();
+        jugador.setPlantado(false);
+        juegoTerminado = false;
+        apuestaHecha = true;
+
+        // ✅ EFECTUAR LA APUESTA (descontar el dinero)
+        jugador.efectuarApuesta();
+
+        repartirCartasIniciales();
+        mostrarEstadoJuego();
+
+        if (verificarBlackjackInicial()) {
+            juegoTerminado = true;
+            determinarGanador();
+        }
+
+        return true;
+    }
+
+    // ===== MÉTODOS DE APUESTAS CORREGIDOS =====
+    public boolean hacerApuesta(int cantidad) {
+        // ✅ Solo validar la apuesta, no descontar dinero
+        return jugador.apostar(cantidad);
     }
 
     public int getDineroJugador() {
@@ -47,6 +76,10 @@ public class BlackjackService {
         return Jugador.getDineroInicial();
     }
 
+    public Crupier getCrupier() {
+        return crupier;
+    }
+
     // ===== MÉTODOS PARA PAUSAS DRAMÁTICAS =====
     private void pausa(int milisegundos) {
         try {
@@ -57,37 +90,14 @@ public class BlackjackService {
     }
 
     private void pausaCorta() {
-        pausa(1000); // 1 segundo
+        pausa(1000);
     }
 
     private void pausaLarga() {
-        pausa(2000); // 2 segundos
+        pausa(2000);
     }
 
-    // ===== MÉTODOS PRINCIPALES DEL JUEGO =====
-    public void iniciarPartida() {
-        System.out.println("=== NUEVA PARTIDA ===");
-        System.out.println("Dinero disponible: $" + jugador.getDinero());
-        System.out.println("Ficha máxima: $" + getFichaMaxima());
-
-        // Limpiar manos y resetear estado
-        jugador.getMano().limpiar();
-        crupier.getMano().limpiar();
-        jugador.setPlantado(false);
-        juegoTerminado = false;
-
-        // Solo reparte cartas si se hizo apuesta
-        if (apuestaHecha) {
-            repartirCartasIniciales();
-            mostrarEstadoJuego();
-
-            if (verificarBlackjackInicial()) {
-                juegoTerminado = true;
-                determinarGanador();
-            }
-        }
-    }
-
+    // ===== MÉTODOS DE JUEGO =====
     private void repartirCartasIniciales() {
         System.out.print("Repartiendo cartas");
         for (int i = 0; i < 3; i++) {
@@ -96,7 +106,6 @@ public class BlackjackService {
         }
         System.out.println();
 
-        // Repartir al jugador con pausas entre cartas
         Carta carta1 = mazo.repartirCarta();
         jugador.getMano().agregarCarta(carta1);
         System.out.println(jugador.getNombre() + " recibe: " + carta1);
@@ -107,7 +116,6 @@ public class BlackjackService {
         System.out.println(jugador.getNombre() + " recibe: " + carta2);
         pausaCorta();
 
-        // Repartir al crupier con pausas entre cartas
         Carta cartaCrupier1 = mazo.repartirCarta();
         crupier.getMano().agregarCarta(cartaCrupier1);
         pausaCorta();
@@ -124,12 +132,7 @@ public class BlackjackService {
     private void mostrarEstadoJuego() {
         System.out.println("\n--- Estado Actual ---");
         System.out.println(jugador.toString());
-
-        if (crupier.getMano().getCartas().size() > 0) {
-            System.out.println("Crupier muestra: " + crupier.getMano().getCartas().get(0));
-        } else {
-            System.out.println("Crupier muestra: [Carta oculta]");
-        }
+        System.out.println("Crupier muestra: " + crupier.getMano().getCartas().get(0));
         System.out.println("---------------------");
     }
 
@@ -179,12 +182,10 @@ public class BlackjackService {
     private void turnoCrupier() {
         System.out.println("\n--- Turno del Crupier ---");
         pausaLarga();
-
         crupier.jugar(mazo);
         determinarGanador();
     }
 
-    // Modificado para pagos de casino
     private void determinarGanador() {
         System.out.println("\n=== RESULTADO FINAL ===");
         System.out.println(jugador.toString());
@@ -193,37 +194,40 @@ public class BlackjackService {
         int valorJugador = jugador.getMano().calcularValor();
         int valorCrupier = crupier.getMano().calcularValor();
 
-        // Sistema de pagos de casino
+        // ✅ SISTEMA DE PAGOS CORREGIDO - CASINO REAL
         if (jugador.sePasó()) {
             System.out.println("❌ " + jugador.getNombre() + " pierde por pasarse de 21.");
-            // Pierde la apuesta (ya se descontó)
+            jugador.perderApuesta(); // ✅ Dinero ya fue descontado
         }
         else if (crupier.sePasó()) {
             System.out.println("✅ " + jugador.getNombre() + " gana! El crupier se pasó de 21.");
-            jugador.recibirPago(2.0);
+            jugador.recibirPago(2.0); // ✅ Gana el doble (1:1)
         }
         else if (jugador.tieneBlackjack() && !crupier.tieneBlackjack()) {
             System.out.println("🎰 ¡BLACKJACK! " + jugador.getNombre() + " gana 3:2");
-            jugador.recibirPago(2.5);
+            jugador.recibirPago(2.5); // ✅ Blackjack paga 3:2
         }
         else if (valorJugador > valorCrupier) {
             System.out.println("✅ " + jugador.getNombre() + " gana con " + valorJugador + " contra " + valorCrupier);
-            jugador.recibirPago(2.0);
+            jugador.recibirPago(2.0); // ✅ Gana el doble (1:1)
         }
         else if (valorJugador < valorCrupier) {
             System.out.println("❌ " + jugador.getNombre() + " pierde con " + valorJugador + " contra " + valorCrupier);
-            // Pierde la apuesta (ya se descontó)
+            jugador.perderApuesta(); // ✅ Dinero ya fue descontado
         }
         else {
             System.out.println("🤝 Empate. Ambos tienen " + valorJugador);
-            jugador.devolverApuesta();
+            jugador.devolverApuesta(); // ✅ Recupera su apuesta
         }
 
         juegoTerminado = true;
-        apuestaHecha = false; // Resetear para próxima ronda
+        apuestaHecha = false;
+
+        // ✅ Mostrar saldo final actualizado
+        System.out.println("💰 Saldo final: $" + jugador.getDinero());
     }
 
-    // ===== NUEVOS MÉTODOS PARA DOBLAR Y DIVIDIR =====
+    // ===== MÉTODOS PARA DOBLAR Y DIVIDIR =====
     public boolean puedeDoblar() {
         return jugador.getMano().getCartas().size() == 2 &&
                 jugador.getDinero() >= jugador.getApuestaActual();
@@ -241,12 +245,9 @@ public class BlackjackService {
 
     public void doblarApuesta() {
         if (puedeDoblar()) {
-            // Doblar la apuesta
-            int apuestaActual = jugador.getApuestaActual();
             if (jugador.doblarApuesta()) {
                 System.out.println("Apuesta doblada a $" + jugador.getApuestaActual());
 
-                // El jugador recibe una sola carta adicional
                 System.out.print("Repartiendo carta");
                 for (int i = 0; i < 3; i++) {
                     System.out.print(".");
@@ -259,15 +260,12 @@ public class BlackjackService {
                 System.out.println(jugador.getNombre() + " recibe: " + nuevaCarta);
 
                 mostrarEstadoJuego();
-
-                // Después de doblar, el jugador se planta automáticamente
                 jugadorSePlanta();
             }
         }
     }
 
     public void dividir() {
-        // Implementación básica para dividir
         System.out.println("Función de dividir próximamente disponible");
     }
 
@@ -279,7 +277,11 @@ public class BlackjackService {
         return jugador;
     }
 
-    public Crupier getCrupier() {
-        return crupier;
+    public boolean getMazoNecesitaReinicio() {
+        return mazo.getCartasRestantes() < 20;
+    }
+
+    public void reiniciarMazo() {
+        this.mazo = new Mazo();
     }
 }

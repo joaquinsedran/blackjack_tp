@@ -19,22 +19,38 @@ public class BlackjackController {
 
         while (jugarOtraVez && !blackjackService.jugadorEnBancarrota()) {
             boolean apuestaValida = false;
+            int apuesta = 0;
+
             while (!apuestaValida) {
-                int apuesta = consolaView.pedirApuesta(
+                apuesta = consolaView.pedirApuesta(
                         blackjackService.getDineroJugador(),
                         blackjackService.getFichaMaxima()
                 );
 
                 if (apuesta > 0) {
+                    consolaView.mostrarApuesta(apuesta);
+
                     apuestaValida = blackjackService.hacerApuesta(apuesta);
                     if (!apuestaValida) {
-                        consolaView.mostrarMensaje("❌ Apuesta no válida. Intenta nuevamente.");
+                        consolaView.mostrarMensaje("❌ Apuesta no válida. Verifica que:");
+                        consolaView.mostrarMensaje("   - Sea múltiplo de 5");
+                        consolaView.mostrarMensaje("   - No exceda tu dinero disponible ($" + blackjackService.getDineroJugador() + ")");
                     }
+                } else {
+                    consolaView.mostrarMensaje("❌ La apuesta debe ser mayor a 0.");
                 }
             }
 
-            blackjackService.iniciarPartida();
+            consolaView.mostrarMensaje("✅ Apuesta aceptada: $" + apuesta);
 
+            boolean partidaIniciada = blackjackService.iniciarPartida(apuesta);
+
+            if (!partidaIniciada) {
+                consolaView.mostrarMensaje("❌ No se pudo iniciar la partida.");
+                continue;
+            }
+
+            // Bucle principal del juego
             while (!blackjackService.isJuegoTerminado()) {
                 consolaView.mostrarOpciones(
                         blackjackService.puedeDoblar(),
@@ -77,20 +93,32 @@ public class BlackjackController {
                 break;
             }
 
+            // ✅ MOSTRAR DINERO ACTUALIZADO (se acumula entre partidas)
             consolaView.mostrarDinero(blackjackService.getDineroJugador());
+
+            // Preguntar si quiere jugar otra partida
             jugarOtraVez = consolaView.preguntarJugarOtraVez();
 
             if (jugarOtraVez) {
-                blackjackService = new BlackjackService();
+                // ✅ NO reiniciar el servicio - mantener el dinero acumulado
+                // Solo reiniciar el mazo si es necesario
+                if (blackjackService.getMazoNecesitaReinicio()) {
+                    blackjackService.reiniciarMazo();
+                    consolaView.mostrarMensaje("🃏 Mazo reiniciado para nueva partida");
+                }
+                consolaView.mostrarMensaje("🎰 ¡Nueva partida iniciada!");
             }
         }
 
-        if (blackjackService.jugadorEnBancarrota()) {
-            consolaView.mostrarBancarrota();
-        } else {
+        if (!blackjackService.jugadorEnBancarrota()) {
             consolaView.mostrarDespedida();
         }
 
         consolaView.cerrar();
+    }
+
+    public static void main(String[] args) {
+        BlackjackController controller = new BlackjackController();
+        controller.iniciarJuego();
     }
 }

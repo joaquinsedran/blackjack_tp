@@ -6,17 +6,14 @@ import java.util.List;
 
 public class Mazo {
     private List<Carta> cartas;
-    private int siguienteCartaIndex;
+    private int indiceCartaActual;
 
-    // Constructor: crea un mazo nuevo y barajado
     public Mazo() {
         cartas = new ArrayList<>();
-        siguienteCartaIndex = 0;
         inicializarMazo();
         barajar();
     }
 
-    // Llena el mazo con las 52 cartas
     private void inicializarMazo() {
         for (Carta.Palo palo : Carta.Palo.values()) {
             for (Carta.Valor valor : Carta.Valor.values()) {
@@ -25,23 +22,25 @@ public class Mazo {
         }
     }
 
-    // Mezcla las cartas
     public void barajar() {
         Collections.shuffle(cartas);
-        siguienteCartaIndex = 0; // Reinicia el índice después de barajar
+        indiceCartaActual = 0;
     }
 
-    // Reparte la siguiente carta del mazo
     public Carta repartirCarta() {
-        if (siguienteCartaIndex >= cartas.size()) {
-            throw new IllegalStateException("¡No hay más cartas en el mazo!");
+        if (indiceCartaActual >= cartas.size()) {
+            barajar(); // Si se acaban las cartas, barajar de nuevo
         }
-        return cartas.get(siguienteCartaIndex++);
+        return cartas.get(indiceCartaActual++);
     }
 
-    // Método útil para debugging
-    @Override
-    public String toString() {
-        return "Mazo con " + cartas.size() + " cartas";
+    // ✅ NUEVO MÉTODO AGREGADO
+    public int getCartasRestantes() {
+        return cartas.size() - indiceCartaActual;
+    }
+
+    // Método para reiniciar completamente el mazo
+    public void reiniciar() {
+        barajar();
     }
 }

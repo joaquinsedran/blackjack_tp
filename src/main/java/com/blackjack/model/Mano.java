@@ -16,6 +16,11 @@ public class Mano {
         cartas.add(carta);
     }
 
+    // LIMPIA todas las cartas de la mano (MÉTODO AGREGADO)
+    public void limpiar() {
+        cartas.clear();
+    }
+
     // Calcula el valor total de la mano
     public int calcularValor() {
         int valor = 0;

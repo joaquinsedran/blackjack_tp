@@ -5,132 +5,171 @@ import java.util.Scanner;
 public class ConsolaView {
     private Scanner scanner;
 
+    // Códigos de colores ANSI (mantener igual)
+    public static final String RESET = "\u001B[0m";
+    public static final String NEGRITA = "\u001B[1m";
+    public static final String ROJO = "\u001B[31m";
+    public static final String VERDE = "\u001B[32m";
+    public static final String AMARILLO = "\u001B[33m";
+    public static final String AZUL = "\u001B[34m";
+    public static final String MORADO = "\u001B[35m";
+    public static final String CYAN = "\u001B[36m";
+    public static final String BLANCO = "\u001B[37m";
+    public static final String FONDO_ROJO = "\u001B[41m";
+    public static final String FONDO_VERDE = "\u001B[42m";
+    public static final String FONDO_AMARILLO = "\u001B[43m";
+    public static final String FONDO_AZUL = "\u001B[44m";
+    public static final String FONDO_MORADO = "\u001B[45m";
+
     public ConsolaView() {
         this.scanner = new Scanner(System.in);
     }
 
-    // ===== NUEVOS MÉTODOS PARA APUESTAS =====
+    public void mostrarBienvenida() {
+        System.out.println(CYAN + NEGRITA + "╔════════════════════════════════╗" + RESET);
+        System.out.println(CYAN + NEGRITA + "║    ¡BIENVENIDO AL BLACKJACK!    ║" + RESET);
+        System.out.println(CYAN + NEGRITA + "╚════════════════════════════════╝" + RESET);
+        System.out.println();
+    }
+
     public int pedirApuesta(int dineroDisponible, int fichaMaxima) {
-        System.out.println("\n--- HACER APUESTA ---");
-        System.out.println("Dinero disponible: $" + dineroDisponible);
-        System.out.println("Ficha máxima: $" + fichaMaxima);
-        System.out.println("Fichas disponibles: $500 - $100 - $25 - $5");
-        System.out.print("¿Cuánto quieres apostar? (múltiplo de 5, min $5): ");
+        System.out.println(AZUL + NEGRITA + "--- HACER APUESTA ---" + RESET);
+        System.out.println("Dinero disponible: " + VERDE + "$" + dineroDisponible + RESET);
+        System.out.println("Ficha individual máxima: " + AMARILLO + "$" + fichaMaxima + RESET); // Mensaje actualizado
+        System.out.println("Apuesta máxima permitida: " + VERDE + "$" + dineroDisponible + RESET); // Nuevo mensaje
+
+        // Mostrar fichas disponibles con colores
+        System.out.print("Fichas disponibles: ");
+        mostrarFichasConColores(dineroDisponible, fichaMaxima);
+
+        System.out.print("¿Cuánto quieres apostar? (múltiplo de 5, min $5, max $" + dineroDisponible + "): ");
 
         try {
-            int apuesta = Integer.parseInt(scanner.nextLine());
-
-            // Validar apuesta (sin máximo, solo múltiplo de 5 y mínimo 5)
-            if (apuesta < 5) {
-                System.out.println("❌ Apuesta mínima: $5");
-                return -1;
-            }
-            if (apuesta % 5 != 0) {
-                System.out.println("❌ La apuesta debe ser múltiplo de 5");
-                return -1;
-            }
-            if (apuesta > dineroDisponible) {
-                System.out.println("❌ No tienes suficiente dinero");
-                return -1;
-            }
-
+            int apuesta = scanner.nextInt();
+            scanner.nextLine(); // Limpiar buffer
             return apuesta;
+        } catch (Exception e) {
+            scanner.nextLine(); // Limpiar buffer
+            return -1;
+        }
+    }
 
-        } catch (NumberFormatException e) {
-            System.out.println("❌ Por favor ingresa un número válido");
+    private void mostrarFichasConColores(int dineroDisponible, int fichaMaxima) {
+        int[] fichas = {500, 100, 25, 5};
+        String[] coloresFondo = {FONDO_ROJO, FONDO_AZUL, FONDO_VERDE, FONDO_AMARILLO};
+        String[] coloresTexto = {BLANCO, BLANCO, BLANCO, BLANCO};
+
+        for (int i = 0; i < fichas.length; i++) {
+            if (fichas[i] <= fichaMaxima && fichas[i] <= dineroDisponible) {
+                System.out.print(coloresFondo[i] + coloresTexto[i] + " $" + fichas[i] + " " + RESET + " ");
+            }
+        }
+        System.out.println();
+    }
+
+    public void mostrarApuesta(int apuesta) {
+        int[] fichas = {500, 100, 25, 5};
+        String[] coloresFondo = {FONDO_ROJO, FONDO_AZUL, FONDO_VERDE, FONDO_AMARILLO};
+        String[] coloresTexto = {BLANCO, BLANCO, BLANCO, BLANCO};
+        String[] nombres = {"ROJA", "AZUL", "VERDE", "AMARILLA"};
+
+        System.out.print("Fichas apostadas: ");
+        int tempApuesta = apuesta;
+        boolean primeraFicha = true;
+
+        for (int i = 0; i < fichas.length; i++) {
+            int cantidad = tempApuesta / fichas[i];
+            if (cantidad > 0) {
+                if (!primeraFicha) {
+                    System.out.print(" + ");
+                }
+                System.out.print(coloresFondo[i] + coloresTexto[i] + "×" + cantidad + " " + nombres[i] + RESET);
+                tempApuesta %= fichas[i];
+                primeraFicha = false;
+            }
+        }
+        System.out.println(" | Total: " + VERDE + "$" + apuesta + RESET);
+    }
+
+    public void mostrarMensaje(String mensaje) {
+        if (mensaje.contains("❌") || mensaje.toLowerCase().contains("insuficiente") ||
+                mensaje.toLowerCase().contains("inválida") || mensaje.toLowerCase().contains("error")) {
+            System.out.println(ROJO + mensaje + RESET);
+        } else if (mensaje.contains("✅") || mensaje.toLowerCase().contains("gana") ||
+                mensaje.toLowerCase().contains("éxito") || mensaje.toLowerCase().contains("aceptada")) {
+            System.out.println(VERDE + mensaje + RESET);
+        } else if (mensaje.contains("🎰") || mensaje.contains("🤝")) {
+            System.out.println(AMARILLO + mensaje + RESET);
+        } else {
+            System.out.println(mensaje);
+        }
+    }
+
+    public void mostrarOpciones(boolean puedeDoblar, boolean puedeDividir) {
+        System.out.println(MORADO + NEGRITA + "\n--- OPCIONES DISPONIBLES ---" + RESET);
+        System.out.println("1. " + CYAN + "Pedir carta" + RESET);
+        System.out.println("2. " + AMARILLO + "Plantarse" + RESET);
+
+        if (puedeDoblar) {
+            System.out.println("3. " + VERDE + "Doblar apuesta" + RESET);
+        } else {
+            System.out.println("3. " + ROJO + "Doblar apuesta (no disponible)" + RESET);
+        }
+
+        if (puedeDividir) {
+            System.out.println("4. " + AZUL + "Dividir" + RESET);
+        } else {
+            System.out.println("4. " + ROJO + "Dividir (no disponible)" + RESET);
+        }
+
+        System.out.println("5. " + MORADO + "Ver reglas" + RESET);
+        System.out.print("Elige una opción: ");
+    }
+
+    public int leerOpcion() {
+        try {
+            int opcion = scanner.nextInt();
+            scanner.nextLine(); // Limpiar buffer
+            return opcion;
+        } catch (Exception e) {
+            scanner.nextLine(); // Limpiar buffer
             return -1;
         }
     }
 
     public void mostrarDinero(int dinero) {
-        System.out.println("Dinero actual: $" + dinero);
-    }
-
-    public void mostrarApuesta(int apuesta) {
-        System.out.println("Apuesta actual: $" + apuesta);
+        System.out.println(VERDE + NEGRITA + "💰 Dinero actual: $" + dinero + RESET);
     }
 
     public void mostrarBancarrota() {
-        System.out.println("\n❌ ¡BANCARROTA! No tienes más dinero para apostar.");
-        System.out.println("El juego ha terminado para ti.");
-    }
-
-    public void mostrarFichas(int cantidad) {
-        System.out.print("Fichas apostadas: ");
-        int temp = cantidad;
-
-        if (temp >= 500) {
-            System.out.print("×" + (temp / 500) + " ");
-            temp %= 500;
-        }
-        if (temp >= 100) {
-            System.out.print("×" + (temp / 100) + " ");
-            temp %= 100;
-        }
-        if (temp >= 25) {
-            System.out.print("×" + (temp / 25) + " ");
-            temp %= 25;
-        }
-        if (temp >= 5) {
-            System.out.print("×" + (temp / 5) + " ");
-        }
-        System.out.println();
-    }
-
-    // ===== MÉTODOS EXISTENTES MODIFICADOS =====
-    public void mostrarBienvenida() {
-        System.out.println("¡BIENVENIDO AL BLACKJACK!");
-        System.out.println("========================");
-    }
-
-    public void mostrarOpciones(boolean puedeDoblar, boolean puedeDividir) {
-        System.out.println("\n--- ¿Qué quieres hacer? ---");
-        System.out.println("1. Pedir carta");
-        System.out.println("2. Plantarse");
-
-        if (puedeDoblar) {
-            System.out.println("3. Doblar apuesta");
-        }
-        if (puedeDividir) {
-            System.out.println("4. Dividir");
-        }
-
-        System.out.println("5. Ver reglas");
-        System.out.print("Elige una opción (1-5): ");
-    }
-
-    public int leerOpcion() {
-        try {
-            return Integer.parseInt(scanner.nextLine());
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-    }
-
-    public void mostrarReglas() {
-        System.out.println("\n--- REGLAS DEL BLACKJACK ---");
-        System.out.println("• Apuesta mínima: $5");
-        System.out.println("• Blackjack paga 3:2 (apuesta $100 → ganas $150)");
-        System.out.println("• Victoria normal paga 1:1");
-        System.out.println("• Empate: devuelve la apuesta");
-        System.out.println("• Si te pasas de 21, pierdes la apuesta");
-        System.out.println("• Puedes doblar tu apuesta después de recibir las dos primeras cartas");
-        System.out.println("• Puedes dividir si tienes dos cartas del mismo valor");
-        System.out.println("---------------------------");
-    }
-
-    public void mostrarMensaje(String mensaje) {
-        System.out.println(mensaje);
-    }
-
-    public boolean preguntarJugarOtraVez() {
-        System.out.print("\n¿Quieres jugar otra vez? (s/n): ");
-        String respuesta = scanner.nextLine().toLowerCase();
-        return respuesta.equals("s") || respuesta.equals("si");
+        System.out.println(ROJO + NEGRITA + "╔════════════════════════════════╗" + RESET);
+        System.out.println(ROJO + NEGRITA + "║         ¡BANCARROTA!           ║" + RESET);
+        System.out.println(ROJO + NEGRITA + "║   Te has quedado sin dinero    ║" + RESET);
+        System.out.println(ROJO + NEGRITA + "╚════════════════════════════════╝" + RESET);
     }
 
     public void mostrarDespedida() {
-        System.out.println("\n¡Gracias por jugar! ¡Hasta pronto!");
+        System.out.println(CYAN + NEGRITA + "╔════════════════════════════════╗" + RESET);
+        System.out.println(CYAN + NEGRITA + "║     ¡GRACIAS POR JUGAR!        ║" + RESET);
+        System.out.println(CYAN + NEGRITA + "║     ¡VUELVE PRONTO!            ║" + RESET);
+        System.out.println(CYAN + NEGRITA + "╚════════════════════════════════╝" + RESET);
+    }
+
+    public boolean preguntarJugarOtraVez() {
+        System.out.print(AMARILLO + "¿Quieres jugar otra partida? (s/n): " + RESET);
+        String respuesta = scanner.nextLine().toLowerCase();
+        return respuesta.equals("s") || respuesta.equals("si") || respuesta.equals("sí");
+    }
+
+    public void mostrarReglas() {
+        System.out.println(AZUL + NEGRITA + "\n--- REGLAS DEL BLACKJACK ---" + RESET);
+        System.out.println("• Objetivo: Llegar a 21 o tener más puntos que el crupier");
+        System.out.println("• Blackjack: 21 con 2 cartas (paga 3:2)");
+        System.out.println("• El crupier debe pedir hasta 16 y plantarse en 17");
+        System.out.println("• Puedes doblar solo con 2 cartas");
+        System.out.println("• Puedes dividir con dos cartas del mismo valor");
+        System.out.println("• Apuesta mínima: $5, máxima: TODO tu dinero"); // Mensaje actualizado
+        System.out.println("• Las fichas son múltiplos de 5\n");
     }
 
     public void cerrar() {

@@ -1,157 +1,105 @@
 package com.blackjack.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Jugador {
     private String nombre;
-    private Mano mano;
-    private boolean plantado;
     private int dinero;
     private int apuestaActual;
+    private Mano mano;
+    private boolean plantado;
+    private static final int DINERO_INICIAL = 1000;
     private static final int FICHA_MAXIMA = 500;
-    private static final int DINERO_INICIAL = 5000;
 
     public Jugador(String nombre) {
         this.nombre = nombre;
+        this.dinero = DINERO_INICIAL;
         this.mano = new Mano();
         this.plantado = false;
-        this.dinero = DINERO_INICIAL;
         this.apuestaActual = 0;
     }
 
-    // ===== MÉTODOS DE DINERO Y APUESTAS =====
-    public int getDinero() {
-        return dinero;
-    }
-
-    public int getApuestaActual() {
-        return apuestaActual;
-    }
-
-    public static int getFichaMaxima() {
-        return FICHA_MAXIMA;
-    }
-
-    public static int getDineroInicial() {
-        return DINERO_INICIAL;
-    }
-
-    // Apostar con validación (sin límite máximo excepto el dinero disponible)
     public boolean apostar(int cantidad) {
-        if (esApuestaValida(cantidad)) {
-            apuestaActual = cantidad;
-            dinero -= cantidad;
-            System.out.println(nombre + " apuesta $" + cantidad + " | Fichas: " + convertirAFichas(cantidad));
-            return true;
+        // Validar que la cantidad sea positiva y múltiplo de 5
+        if (cantidad <= 0 || cantidad % 5 != 0) {
+            return false;
         }
-        return false;
+
+        // Validar que el jugador tenga suficiente dinero
+        if (cantidad > dinero) {
+            return false;
+        }
+
+        // ✅ SOLO establecer la apuesta, NO descontar el dinero aquí
+        this.apuestaActual = cantidad;
+        return true;
     }
 
-    // Verificar si la apuesta es válida (múltiplo de 5, mínimo 5, máximo el dinero disponible)
-    public boolean esApuestaValida(int cantidad) {
-        return cantidad >= 5 &&
-                cantidad % 5 == 0 &&
-                cantidad <= dinero;
-    }
-
-    // Doblar apuesta
     public boolean doblarApuesta() {
+        // Validar que tenga suficiente dinero para doblar
         if (dinero >= apuestaActual) {
+            // ✅ Descontar el dinero adicional solo cuando se efectúa la apuesta
             dinero -= apuestaActual;
             apuestaActual *= 2;
-            System.out.println("Apuesta doblada a $" + apuestaActual);
             return true;
         }
         return false;
     }
 
-    // Recibir pago según reglas de casino
     public void recibirPago(double multiplicador) {
         int ganancia = (int) (apuestaActual * multiplicador);
-        dinero += ganancia;
-        System.out.println(nombre + " gana $" + ganancia + " | Total: $" + dinero);
-    }
-
-    // Devolver apuesta (en caso de empate)
-    public void devolverApuesta() {
-        dinero += apuestaActual;
-        System.out.println(nombre + " recupera su apuesta de $" + apuestaActual);
-    }
-
-    // Convertir cantidad a símbolos de fichas
-    private String convertirAFichas(int cantidad) {
-        StringBuilder fichas = new StringBuilder();
-        int temp = cantidad;
-
-        if (temp >= 500) {
-            fichas.append("×").append(temp / 500).append(" ");
-            temp %= 500;
-        }
-        if (temp >= 100) {
-            fichas.append("×").append(temp / 100).append(" ");
-            temp %= 100;
-        }
-        if (temp >= 25) {
-            fichas.append("×").append(temp / 25).append(" ");
-            temp %= 25;
-        }
-        if (temp >= 5) {
-            fichas.append("×").append(temp / 5).append(" ");
-        }
-
-        return fichas.toString().trim();
-    }
-
-    public void resetearApuesta() {
+        dinero += ganancia + apuestaActual; // ✅ Devolver apuesta + ganancias
+        System.out.println("💰 " + nombre + " gana $" + ganancia + " | Total: $" + dinero);
         apuestaActual = 0;
     }
 
-    public boolean estaEnBancarrota() {
-        return dinero < 5; // No puede hacer la apuesta mínima
+    public void devolverApuesta() {
+        dinero += apuestaActual; // ✅ Solo devolver la apuesta (empate)
+        System.out.println("🤝 " + nombre + " recupera su apuesta de $" + apuestaActual + " | Total: $" + dinero);
+        apuestaActual = 0;
     }
 
-    // ===== MÉTODOS ORIGINALES DEL JUEGO =====
-    public void pedirCarta(Mazo mazo) {
-        if (!plantado) {
-            Carta carta = mazo.repartirCarta();
-            mano.agregarCarta(carta);
-            System.out.println(nombre + " recibe: " + carta);
-        }
-    }
-
-    public void plantarse() {
-        this.plantado = true;
-        System.out.println(nombre + " se planta.");
-    }
-
-    public boolean sePasó() {
-        return mano.calcularValor() > 21;
+    public void perderApuesta() {
+        // ✅ El dinero ya fue descontado al hacer la apuesta
+        System.out.println("❌ " + nombre + " pierde apuesta de $" + apuestaActual + " | Total: $" + dinero);
+        apuestaActual = 0;
     }
 
     public boolean tieneBlackjack() {
         return mano.calcularValor() == 21 && mano.getCartas().size() == 2;
     }
 
-    // Getters
-    public String getNombre() {
-        return nombre;
+    public boolean sePasó() {
+        return mano.calcularValor() > 21;
     }
 
-    public Mano getMano() {
-        return mano;
+    public void plantarse() {
+        this.plantado = true;
     }
 
-    public boolean isPlantado() {
-        return plantado;
+    public boolean estaEnBancarrota() {
+        return dinero < 5; // No puede hacer la apuesta mínima
     }
 
-    public void setPlantado(boolean plantado) {
-        this.plantado = plantado;
+    // ✅ Método para efectuar la apuesta (descontar el dinero)
+    public void efectuarApuesta() {
+        if (apuestaActual > 0 && apuestaActual <= dinero) {
+            dinero -= apuestaActual;
+            System.out.println("🎰 " + nombre + " apuesta $" + apuestaActual + " | Saldo restante: $" + dinero);
+        }
     }
+
+    // Getters y Setters
+    public String getNombre() { return nombre; }
+    public int getDinero() { return dinero; }
+    public int getApuestaActual() { return apuestaActual; }
+    public Mano getMano() { return mano; }
+    public boolean isPlantado() { return plantado; }
+    public void setPlantado(boolean plantado) { this.plantado = plantado; }
+
+    public static int getFichaMaxima() { return FICHA_MAXIMA; }
+    public static int getDineroInicial() { return DINERO_INICIAL; }
 
     @Override
     public String toString() {
-        return nombre + " ($" + dinero + ") - Mano: " + mano.toString();
+        return nombre + ": " + mano.toString() + " | Dinero: $" + dinero + " | Apuesta: $" + apuestaActual;
     }
 }
