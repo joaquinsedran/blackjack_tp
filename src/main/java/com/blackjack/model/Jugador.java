@@ -18,25 +18,20 @@ public class Jugador {
     }
 
     public boolean apostar(int cantidad) {
-        // Validar que la cantidad sea positiva y múltiplo de 5
         if (cantidad <= 0 || cantidad % 5 != 0) {
             return false;
         }
 
-        // Validar que el jugador tenga suficiente dinero
         if (cantidad > dinero) {
             return false;
         }
 
-        // ✅ SOLO establecer la apuesta, NO descontar el dinero aquí
         this.apuestaActual = cantidad;
         return true;
     }
 
     public boolean doblarApuesta() {
-        // Validar que tenga suficiente dinero para doblar
         if (dinero >= apuestaActual) {
-            // ✅ Descontar el dinero adicional solo cuando se efectúa la apuesta
             dinero -= apuestaActual;
             apuestaActual *= 2;
             return true;
@@ -45,8 +40,9 @@ public class Jugador {
     }
 
     public void recibirPago(double multiplicador) {
-        int ganancia = (int) (apuestaActual * multiplicador);
-        dinero += ganancia + apuestaActual; // ✅ Devolver apuesta + ganancias
+        // ✅ CORREGIDO: Calcular solo las ganancias, no sumar la apuesta otra vez
+        int ganancia = (int) (apuestaActual * (multiplicador - 1));
+        dinero += apuestaActual + ganancia; // ✅ Devuelve apuesta + ganancias
         System.out.println("💰 " + nombre + " gana $" + ganancia + " | Total: $" + dinero);
         apuestaActual = 0;
     }
@@ -76,10 +72,9 @@ public class Jugador {
     }
 
     public boolean estaEnBancarrota() {
-        return dinero < 5; // No puede hacer la apuesta mínima
+        return dinero < 5;
     }
 
-    // ✅ Método para efectuar la apuesta (descontar el dinero)
     public void efectuarApuesta() {
         if (apuestaActual > 0 && apuestaActual <= dinero) {
             dinero -= apuestaActual;

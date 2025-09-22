@@ -106,6 +106,7 @@ public class BlackjackService {
         }
         System.out.println();
 
+        // Repartir al jugador
         Carta carta1 = mazo.repartirCarta();
         jugador.getMano().agregarCarta(carta1);
         System.out.println(jugador.getNombre() + " recibe: " + carta1);
@@ -116,6 +117,7 @@ public class BlackjackService {
         System.out.println(jugador.getNombre() + " recibe: " + carta2);
         pausaCorta();
 
+        // Repartir al crupier
         Carta cartaCrupier1 = mazo.repartirCarta();
         crupier.getMano().agregarCarta(cartaCrupier1);
         pausaCorta();
@@ -182,6 +184,12 @@ public class BlackjackService {
     private void turnoCrupier() {
         System.out.println("\n--- Turno del Crupier ---");
         pausaLarga();
+
+        // Mostrar la carta oculta del crupier
+        System.out.println("Crupier muestra su carta oculta: " + crupier.getMano().getCartas().get(1));
+        System.out.println("Crupier: " + crupier.toString());
+        pausaLarga();
+
         crupier.jugar(mazo);
         determinarGanador();
     }
@@ -197,23 +205,23 @@ public class BlackjackService {
         // ✅ SISTEMA DE PAGOS CORREGIDO - CASINO REAL
         if (jugador.sePasó()) {
             System.out.println("❌ " + jugador.getNombre() + " pierde por pasarse de 21.");
-            jugador.perderApuesta(); // ✅ Dinero ya fue descontado
+            jugador.perderApuesta();
         }
         else if (crupier.sePasó()) {
             System.out.println("✅ " + jugador.getNombre() + " gana! El crupier se pasó de 21.");
-            jugador.recibirPago(2.0); // ✅ Gana el doble (1:1)
+            jugador.recibirPago(2.0); // ✅ Gana 1:1 (apuesta + igual cantidad)
         }
         else if (jugador.tieneBlackjack() && !crupier.tieneBlackjack()) {
             System.out.println("🎰 ¡BLACKJACK! " + jugador.getNombre() + " gana 3:2");
-            jugador.recibirPago(2.5); // ✅ Blackjack paga 3:2
+            jugador.recibirPago(2.5); // ✅ Blackjack paga 3:2 (apuesta + 1.5 veces)
         }
         else if (valorJugador > valorCrupier) {
             System.out.println("✅ " + jugador.getNombre() + " gana con " + valorJugador + " contra " + valorCrupier);
-            jugador.recibirPago(2.0); // ✅ Gana el doble (1:1)
+            jugador.recibirPago(2.0); // ✅ Gana 1:1 (apuesta + igual cantidad)
         }
         else if (valorJugador < valorCrupier) {
             System.out.println("❌ " + jugador.getNombre() + " pierde con " + valorJugador + " contra " + valorCrupier);
-            jugador.perderApuesta(); // ✅ Dinero ya fue descontado
+            jugador.perderApuesta();
         }
         else {
             System.out.println("🤝 Empate. Ambos tienen " + valorJugador);
@@ -246,7 +254,7 @@ public class BlackjackService {
     public void doblarApuesta() {
         if (puedeDoblar()) {
             if (jugador.doblarApuesta()) {
-                System.out.println("Apuesta doblada a $" + jugador.getApuestaActual());
+                System.out.println("🎰 Apuesta doblada a $" + jugador.getApuestaActual());
 
                 System.out.print("Repartiendo carta");
                 for (int i = 0; i < 3; i++) {
@@ -260,15 +268,29 @@ public class BlackjackService {
                 System.out.println(jugador.getNombre() + " recibe: " + nuevaCarta);
 
                 mostrarEstadoJuego();
+
+                // Después de doblar, el jugador se planta automáticamente
                 jugadorSePlanta();
             }
         }
     }
 
     public void dividir() {
-        System.out.println("Función de dividir próximamente disponible");
+        if (puedeDividir()) {
+            System.out.println("🎴 Función de dividir activada");
+            // Implementación básica de división
+            Carta primeraCarta = jugador.getMano().getCartas().get(0);
+            Carta segundaCarta = jugador.getMano().getCartas().get(1);
+
+            System.out.println("Dividiendo " + primeraCarta + " y " + segundaCarta);
+            System.out.println("⚠️  Función de dividir completa próximamente disponible");
+            System.out.println("Por ahora, continuamos con la mano actual...");
+        } else {
+            System.out.println("❌ No puedes dividir en este momento");
+        }
     }
 
+    // ===== GETTERS Y MÉTODOS ADICIONALES =====
     public boolean isJuegoTerminado() {
         return juegoTerminado;
     }
@@ -283,5 +305,16 @@ public class BlackjackService {
 
     public void reiniciarMazo() {
         this.mazo = new Mazo();
+        System.out.println("🃏 Mazo reiniciado - ¡Cartas nuevas!");
+    }
+
+    // ===== MÉTODO PARA REINICIAR JUEGO (OPCIONAL) =====
+    public void reiniciarJuego() {
+        this.mazo = new Mazo();
+        this.jugador = new Jugador("Jugador 1");
+        this.crupier = new Crupier();
+        this.juegoTerminado = false;
+        this.apuestaHecha = false;
+        System.out.println("🔄 Juego reiniciado - ¡Buena suerte!");
     }
 }
