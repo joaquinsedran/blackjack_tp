@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Blackjack</title>
+    <style>
+        body {
+            background-color: #0a5c0a;
+            color: white;
+            font-family: Arial;
+            text-align: center;
+            padding: 20px;
+        }
+        .mesa {
+            background-color: #1a7b1a;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .carta {
+            display: inline-block;
+            width: 80px;
+            height: 120px;
+            background: white;
+            color: black;
+            margin: 10px;
+            border-radius: 8px;
+            line-height: 120px;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        button {
+            background: gold;
+            color: darkgreen;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .mensaje {
+            background: gold;
+            color: darkgreen;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="mesa">
+    <h1>♠️ BLACKJACK ♥️</h1>
+
+    <div>
+        <h2>💼 CRUPIER</h2>
+        <div class="carta">?</div>
+        <div class="carta">A♠</div>
+        <p th:text="${estadoCrupier}">Crupier: 1 carta</p>
+    </div>
+
+    <div>
+        <h2>👤 JUGADOR</h2>
+        <div class="carta">K♥</div>
+        <div class="carta">7♦</div>
+        <div th:each="i : ${#numbers.sequence(1, contadorCartas)}">
+            <div class="carta">Nº</div>
+        </div>
+        <p th:text="${estadoJugador}">Jugador: 2 cartas</p>
+    </div>
+
+    <div th:if="${juegoTerminado}" class="mensaje">
+        <span th:text="${mensaje}">¡Resultado!</span>
+    </div>
+
+    <div>
+        <form action="/pedir" method="post">
+            <button type="submit" th:disabled="${juegoTerminado}">🃏 PEDIR CARTA</button>
+        </form>
+        <form action="/plantarse" method="post">
+            <button type="submit" th:disabled="${juegoTerminado}">✋ PLANTASTE</button>
+        </form>
+        <form action="/reiniciar" method="post">
+            <button type="submit">🔄 NUEVA PARTIDA</button>
+        </form>
+    </div>
+
+    <p th:text="${mensaje}">Mensaje del juego</p>
+</div>
+</body>
+</html>
