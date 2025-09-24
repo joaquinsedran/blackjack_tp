@@ -6,59 +6,52 @@ import java.util.List;
 public class Mano {
     private List<Carta> cartas;
 
-    // Constructor: crea una mano vacía
     public Mano() {
-        cartas = new ArrayList<>();
+        this.cartas = new ArrayList<>();
     }
 
-    // Agrega una carta a la mano
     public void agregarCarta(Carta carta) {
         cartas.add(carta);
     }
 
-    // LIMPIA todas las cartas de la mano (MÉTODO AGREGADO)
-    public void limpiar() {
-        cartas.clear();
-    }
-
-    // Calcula el valor total de la mano
     public int calcularValor() {
         int valor = 0;
-        int contadorAses = 0;
+        int ases = 0;
 
-        // Sumar el valor de todas las cartas
         for (Carta carta : cartas) {
-            valor += carta.getValorNumerico();
-            if (carta.getValor() == Carta.Valor.A) {
-                contadorAses++;
+            // ✅ CORRECTO: Comparar enums directamente
+            switch (carta.getValorEnum()) {
+                case A:
+                    ases++;
+                    valor += 11;
+                    break;
+                case J:
+                case Q:
+                case K:
+                    valor += 10;
+                    break;
+                default:
+                    // Para DOS, TRES, ..., DIEZ
+                    valor += carta.getValorEnum().ordinal() + 2;
+                    break;
             }
         }
 
-        // Ajustar el valor de los Ases si nos pasamos de 21
-        while (valor > 21 && contadorAses > 0) {
-            valor -= 10; // Cambiamos un As de 11 a 1 (restamos 10)
-            contadorAses--;
+        // Ajustar Ases
+        while (valor > 21 && ases > 0) {
+            valor -= 10;
+            ases--;
         }
 
         return valor;
     }
 
-    // Muestra las cartas de la mano
+    public List<Carta> getCartas() { return cartas; }
+    public void limpiar() { cartas.clear(); }
+    public int tamaño() { return cartas.size(); }
+
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (Carta carta : cartas) {
-            sb.append(carta.toString()).append(", ");
-        }
-        // Elimina la última coma y espacio
-        if (sb.length() > 0) {
-            sb.setLength(sb.length() - 2);
-        }
-        return sb.toString() + " (Total: " + calcularValor() + ")";
-    }
-
-    // Getter para acceder a las cartas
-    public List<Carta> getCartas() {
-        return cartas;
+        return cartas.toString();
     }
 }

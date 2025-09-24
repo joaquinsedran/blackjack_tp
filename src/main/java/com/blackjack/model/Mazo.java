@@ -34,13 +34,7 @@ public class Mazo {
         return cartas.get(indiceCartaActual++);
     }
 
-    // ✅ NUEVO MÉTODO AGREGADO
     public int getCartasRestantes() {
         return cartas.size() - indiceCartaActual;
-    }
-
-    // Método para reiniciar completamente el mazo
-    public void reiniciar() {
-        barajar();
     }
 }

@@ -1,8 +1,16 @@
 package com.blackjack.model;
 
 public class Carta {
-    public enum Palo { PICAS, CORAZONES, DIAMANTES, TREBOLES }
-    public enum Valor { DOS, TRES, CUATRO, CINCO, SEIS, SIETE, OCHO, NUEVE, DIEZ, J, Q, K, A }
+    public enum Palo {
+        PICAS,
+        CORAZONES,
+        DIAMANTES,
+        TREBOLES
+    }
+
+    public enum Valor {
+        DOS, TRES, CUATRO, CINCO, SEIS, SIETE, OCHO, NUEVE, DIEZ, J, Q, K, A
+    }
 
     private final Palo palo;
     private final Valor valor;
@@ -22,21 +30,48 @@ public class Carta {
             case SIETE: return 7;
             case OCHO: return 8;
             case NUEVE: return 9;
-            case DIEZ:
-            case J:
-            case Q:
-            case K: return 10;
+            case DIEZ: case J: case Q: case K: return 10;
             case A: return 11;
             default: return 0;
         }
     }
 
-    @Override
-    public String toString() {
-        return valor + " de " + palo;
+    // Getters para Thymeleaf - CORREGIDOS
+    public String getPalo() {
+        return palo.name();
     }
 
-    // Getters
-    public Palo getPalo() { return palo; }
-    public Valor getValor() { return valor; }
+    public String getValor() {
+        switch (valor) {
+            case J: return "J";
+            case Q: return "Q";
+            case K: return "K";
+            case A: return "A";
+            default: return String.valueOf(getValorNumerico());
+        }
+    }
+
+    // Nuevo método para obtener el símbolo del palo
+    public String getSimboloPalo() {
+        switch (palo) {
+            case CORAZONES: return "♥";
+            case DIAMANTES: return "♦";
+            case TREBOLES: return "♣";
+            case PICAS: return "♠";
+            default: return "";
+        }
+    }
+
+    public Palo getPaloEnum() {
+        return palo;
+    }
+
+    public Valor getValorEnum() {
+        return valor;
+    }
+
+    @Override
+    public String toString() {
+        return getValor() + " de " + palo;
+    }
 }
