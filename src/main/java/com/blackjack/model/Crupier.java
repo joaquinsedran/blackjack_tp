@@ -1,66 +1,77 @@
 package com.blackjack.model;
 
-public class Crupier {
-    private Mano mano;
-    private boolean jugando;
+import java.util.ArrayList;
+import java.util.List;
 
-    // Constructor: crea un crupier con mano vacía
+public class Crupier {
+    private String nombre;
+    private List<Carta> mano;
+    private int puntuacion;
+
     public Crupier() {
-        this.mano = new Mano();
-        this.jugando = false;
+        this.nombre = "Crupier";
+        this.mano = new ArrayList<>();
+        this.puntuacion = 0;
     }
 
-    // El crupier juega automáticamente según las reglas
-    public void jugar(Mazo mazo) {
-        jugando = true;
-        System.out.println("\n--- Turno del Crupier ---");
+    public void recibirCarta(Carta carta) {
+        if (carta != null) {
+            mano.add(carta);
+            actualizarPuntuacion();
+        }
+    }
 
-        // El crupier debe pedir cartas hasta tener 17 o más
-        while (mano.calcularValor() < 17) {
-            Carta carta = mazo.repartirCarta();
-            mano.agregarCarta(carta);
-            System.out.println("Crupier recibe: " + carta + " (Total: " + mano.calcularValor() + ")");
+    public void actualizarPuntuacion() {
+        int valor = 0;
+        int ases = 0;
 
-            // Pequeña pausa para dramatismo
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        for (Carta carta : mano) {
+            valor += carta.getValorNumerico();
+            if (carta.getValor().equals("A")) {
+                ases++;
             }
         }
 
-        // Mostrar resultado final del crupier
-        if (sePasó()) {
-            System.out.println("¡El crupier se pasó de 21! (" + mano.calcularValor() + ")");
-        } else {
-            System.out.println("El crupier se planta con: " + mano.calcularValor());
+        while (valor > 21 && ases > 0) {
+            valor -= 10;
+            ases--;
         }
 
-        jugando = false;
+        this.puntuacion = valor;
     }
 
-    // Verifica si el crupier se pasó de 21
+    public void reiniciarMano() {
+        this.mano.clear();
+        this.puntuacion = 0;
+    }
+
+    public boolean debePedirCarta() {
+        return puntuacion < 17;
+    }
+
     public boolean sePasó() {
-        return mano.calcularValor() > 21;
+        return puntuacion > 21;
     }
 
-    // Verifica si el crupier tiene blackjack
     public boolean tieneBlackjack() {
-        return mano.calcularValor() == 21;
+        return mano.size() == 2 && puntuacion == 21;
     }
 
-    // GETTERS
-    public Mano getMano() {
-        return mano;
+    // Getters
+    public String getNombre() {
+        return nombre;
     }
 
-    public boolean isJugando() {
-        return jugando;
+    public List<Carta> getMano() {
+        return new ArrayList<>(mano);
     }
 
-    // Representación en String del crupier
+    public int getPuntuacion() {
+        return puntuacion;
+    }
+
     @Override
     public String toString() {
-        return "Crupier: " + mano.toString();
+        return nombre + " - Mano: " + mano + " - Puntuación: " + puntuacion;
     }
 }
