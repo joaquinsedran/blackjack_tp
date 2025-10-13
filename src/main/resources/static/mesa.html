@@ -3,613 +3,495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blackjack</title>
+    <title>Mesa de Blackjack</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --table-green: #0a4723;
+            --felt-green: #0f5c2e;
+            --darker-green: #083b1d;
+            --border-gold: #b8860b;
+            --text-light: #f0f0f0;
+            --card-bg: #ffffff;
+            --card-border: #333;
+            --red-suit: #d90429;
+            --black-suit: #1c1c1c;
+            --btn-green: #28a745;
+            --btn-red: #dc3545;
         }
 
         body {
-            background: linear-gradient(135deg, #0a3d1e, #1a5e2c);
-            color: white;
-            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--table-green);
+            color: var(--text-light);
             display: flex;
             justify-content: center;
             align-items: center;
+            height: 100vh;
+            margin: 0;
             padding: 20px;
+            box-sizing: border-box;
+            overflow: hidden;
+            perspective: 1000px;
         }
 
-        .game-container {
+        #mesa-juego {
             width: 100%;
-            max-width: 800px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            color: #ffcc00;
-            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-            margin-bottom: 10px;
-        }
-
-        .game-area {
+            max-width: 900px;
+            background-color: var(--felt-green);
+            border-radius: 150px / 75px;
+            padding: 40px;
+            border: 10px solid var(--border-gold);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(0, 0, 0, 0.5);
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: 20px;
         }
 
-        .player-area, .dealer-area {
-            background: rgba(255, 255, 255, 0.1);
+        .area-mano {
+            background-color: var(--darker-green);
             border-radius: 10px;
-            padding: 15px;
+            padding: 20px;
+            min-height: 150px;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
         }
 
-        .area-title {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: #ffcc00;
+        .info-jugador {
             text-align: center;
-        }
-
-        .points {
-            font-size: 1.2rem;
             margin-bottom: 15px;
-            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #000;
         }
 
-        .cards-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            min-height: 120px;
-            justify-content: center;
-            margin-bottom: 15px;
-        }
-
-        .card {
-            width: 80px;
-            height: 110px;
-            background: white;
-            border-radius: 8px;
+        .cartas-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.8rem;
-            color: #333;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-            position: relative;
-        }
-
-        .card.new-card {
-            opacity: 0;
-            transform: translateY(-20px) rotateY(180deg);
-            animation: aparecer 0.6s ease forwards;
-        }
-
-        @keyframes aparecer {
-            to {
-                opacity: 1;
-                transform: translateY(0) rotateY(0);
-            }
-        }
-
-        .card.red {
-            color: #d40000;
-        }
-
-        .card-back {
-            background: linear-gradient(45deg, #d40000, #8b0000);
-            color: white;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
             flex-wrap: wrap;
+            gap: 10px;
         }
 
-        button {
-            padding: 12px 25px;
-            border: none;
+        .carta-container {
+            width: 80px;
+            height: 120px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+
+        .carta-container.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .carta-container.disappearing {
+            transition: opacity 0.5s, transform 0.5s;
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        .carta {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
             border-radius: 8px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.4);
         }
 
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 8px rgba(0, 0, 0, 0.4);
-        }
-
-        button:active {
-            transform: translateY(1px);
-        }
-
-        .new-game {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .hit {
-            background: #2196F3;
-            color: white;
-        }
-
-        .stand {
-            background: #FF9800;
-            color: white;
-        }
-
-        .clear-bet {
-            background: #f44336;
-            color: white;
-        }
-
-        button:disabled {
-            background: #666;
-            color: #999;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .betting {
+        .carta.front {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            margin-top: 20px;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 2em;
+            font-weight: bold;
+            padding: 5px;
+            transform: rotateY(180deg);
         }
 
-        .bet-options {
+        .carta.back {
+            background-color: #6a0dad;
+            background-image: linear-gradient(45deg, #8e44ad 25%, transparent 25%), linear-gradient(-45deg, #8e44ad 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #8e44ad 75%), linear-gradient(-45deg, transparent 75%, #8e44ad 75%);
+            background-size: 20px 20px;
+            border: 2px solid #fff;
+        }
+
+        .carta.front.red { color: var(--red-suit); }
+        .carta.front.black { color: var(--black-suit); }
+        .carta.front span { position: absolute; }
+        .carta .valor-top { top: 5px; left: 10px; }
+        .carta .palo { font-size: 1.5em; }
+        .carta .valor-bottom { bottom: 5px; right: 10px; transform: rotate(180deg); }
+
+        .controles, .fichas {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 15px;
             flex-wrap: wrap;
         }
 
-        .bet-option {
+        .btn, .ficha {
             padding: 10px 20px;
-            background: #444;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-            min-width: 80px;
-        }
-
-        .bet-option:hover {
-            background: #555;
-        }
-
-        .bet-option.selected {
-            background: #ffcc00;
-            color: #000;
+            font-size: 1em;
             font-weight: bold;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
 
-        .bet-option.disabled {
-            background: #666;
-            color: #999;
-            cursor: not-allowed;
+        #btn-nueva-partida { background-color: var(--btn-green); color: white; }
+        #btn-limpiar-apuesta { background-color: var(--btn-red); color: white; }
+
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0,0,0,0.4); }
+        .btn:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 2px 3px rgba(0,0,0,0.4); }
+        .btn:disabled { background-color: #555; color: #999; cursor: not-allowed; opacity: 0.6; }
+
+        .ficha {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 3px solid #fff;
         }
 
-        .game-info {
+        #mensaje {
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ffeb3b;
+            min-height: 24px;
+        }
+
+        #info-saldo {
             display: flex;
             justify-content: space-between;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-
-        .message {
-            text-align: center;
-            font-size: 1.3rem;
-            margin-top: 20px;
-            min-height: 30px;
-            color: #ffcc00;
-        }
-
-        .error-message {
-            color: #ff4444;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            background-color: var(--darker-green);
+            border-radius: 0 0 10px 10px;
         }
     </style>
 </head>
 <body>
-<div class="game-container">
-    <div class="header">
-        <h1>¡Bienvenido al Blackjack!</h1>
+
+<div id="mesa-juego">
+    <div id="area-crupier" class="area-mano">
+        <div class="info-jugador">Crupier <span id="puntos-crupier"></span></div>
+        <div id="cartas-crupier" class="cartas-container"></div>
     </div>
 
-    <div class="game-area">
-        <div class="dealer-area">
-            <div class="area-title">Crupier</div>
-            <div class="points">Puntos: <span id="dealer-points">?</span></div>
-            <div class="cards-container" id="dealer-cards"></div>
-        </div>
-
-        <div class="player-area">
-            <div class="area-title">Jugador</div>
-            <div class="points">Puntos: <span id="player-points">0</span></div>
-            <div class="cards-container" id="player-cards"></div>
-        </div>
+    <div id="area-jugador" class="area-mano">
+        <div class="info-jugador">Jugador <span id="puntos-jugador"></span></div>
+        <div id="cartas-jugador" class="cartas-container"></div>
     </div>
 
-    <div class="message" id="game-message">¡Bienvenido al Blackjack!</div>
+    <div id="mensaje">¡Bienvenido al Blackjack!</div>
 
-    <div class="controls">
-        <button class="new-game" id="new-game-btn">Nueva Partida</button>
-        <button class="hit" id="hit-btn" disabled>Pedir Carta</button>
-        <button class="stand" id="stand-btn" disabled>Plantarse</button>
-        <button class="clear-bet" id="clear-bet-btn">Eliminar Apuesta</button>
+    <div class="controles">
+        <button id="btn-nueva-partida" class="btn">Nueva Partida</button>
+        <button id="btn-pedir" class="btn" disabled>Pedir Carta</button>
+        <button id="btn-plantarse" class="btn" disabled>Plantarse</button>
+        <button id="btn-limpiar-apuesta" class="btn">Limpiar Apuesta</button>
     </div>
 
-    <div class="betting">
-        <div class="bet-options">
-            <div class="bet-option" data-value="10">$10</div>
-            <div class="bet-option" data-value="50">$50</div>
-            <div class="bet-option" data-value="100">$100</div>
-            <div class="bet-option" data-value="500">$500</div>
-        </div>
+    <div class="fichas">
+        <button class="ficha" data-valor="10">$10</button>
+        <button class="ficha" data-valor="50">$50</button>
+        <button class="ficha" data-valor="100">$100</button>
+        <button class="ficha" data-valor="500">$500</button>
     </div>
 
-    <div class="game-info">
-        <div>Apuesta: $<span id="current-bet">0</span></div>
-        <div>Saldo: $<span id="balance">1000</span></div>
+    <div id="info-saldo">
+        <span id="apuesta-actual">Apuesta: $0</span>
+        <span id="saldo-jugador">Saldo: $1000</span>
     </div>
 </div>
 
 <script>
-    class BlackjackFrontend {
-        constructor() {
-            this.baseUrl = '/api/blackjack';
-            this.initializeElements();
-            this.attachEventListeners();
-            this.currentBet = 0;
-            this.balance = 1000;
-            this.playerCartasAnteriores = [];
-            this.dealerCartasAnteriores = [];
-            this.jugadorSePaso = false;
+    document.addEventListener('DOMContentLoaded', () => {
+        const btnNuevaPartida = document.getElementById('btn-nueva-partida');
+        const btnPedir = document.getElementById('btn-pedir');
+        const btnPlantarse = document.getElementById('btn-plantarse');
+        const btnLimpiarApuesta = document.getElementById('btn-limpiar-apuesta');
+        const fichasContainer = document.querySelector('.fichas');
+        const mensajeEl = document.getElementById('mensaje');
+        const saldoEl = document.getElementById('saldo-jugador');
+        const apuestaEl = document.getElementById('apuesta-actual');
+        const cartasCrupierEl = document.getElementById('cartas-crupier');
+        const cartasJugadorEl = document.getElementById('cartas-jugador');
+        const puntosCrupierEl = document.getElementById('puntos-crupier');
+        const puntosJugadorEl = document.getElementById('puntos-jugador');
 
-            this.cargarEstado();
-        }
+        let apuestaActual = 0;
+        let saldo = 1000;
+        let juegoActivo = false;
 
-        initializeElements() {
-            this.playerCardsEl = document.getElementById('player-cards');
-            this.dealerCardsEl = document.getElementById('dealer-cards');
-            this.playerPointsEl = document.getElementById('player-points');
-            this.dealerPointsEl = document.getElementById('dealer-points');
-            this.newGameBtn = document.getElementById('new-game-btn');
-            this.hitBtn = document.getElementById('hit-btn');
-            this.standBtn = document.getElementById('stand-btn');
-            this.clearBetBtn = document.getElementById('clear-bet-btn');
-            this.currentBetEl = document.getElementById('current-bet');
-            this.balanceEl = document.getElementById('balance');
-            this.gameMessageEl = document.getElementById('game-message');
-            this.betOptions = document.querySelectorAll('.bet-option');
-        }
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-        attachEventListeners() {
-            this.newGameBtn.addEventListener('click', () => this.nuevaPartida());
-            this.hitBtn.addEventListener('click', () => this.pedirCarta());
-            this.standBtn.addEventListener('click', () => this.plantarse());
-            this.clearBetBtn.addEventListener('click', () => this.eliminarApuesta());
-
-            this.betOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    this.setApuesta(option.getAttribute('data-value'));
-                });
-            });
-        }
-
-        async cargarEstado() {
-            try {
-                const response = await fetch(`${this.baseUrl}/estado`);
-                if (response.ok) {
-                    const estado = await response.json();
-                    this.actualizarUI(estado);
-                }
-            } catch (error) {
-                console.error('Error cargando estado:', error);
+        fichasContainer.addEventListener('click', (e) => {
+            if (juegoActivo || !e.target.classList.contains('ficha')) return;
+            const valorFicha = parseInt(e.target.dataset.valor);
+            if (valorFicha > saldo) {
+                mostrarMensaje("No tienes saldo suficiente.");
+                setTimeout(() => mostrarMensaje(''), 2000);
+                return;
             }
-        }
+            apuestaActual += valorFicha;
+            saldo -= valorFicha;
+            actualizarInfoApuestaYSaldo();
+        });
 
-        setApuesta(monto) {
-            const montoNum = parseInt(monto);
-            if (montoNum > this.balance) {
-                this.mostrarError('Saldo insuficiente');
+        btnLimpiarApuesta.addEventListener('click', () => {
+            if (juegoActivo) return;
+            saldo += apuestaActual;
+            apuestaActual = 0;
+            actualizarInfoApuestaYSaldo();
+        });
+
+        btnNuevaPartida.addEventListener('click', iniciarPartida);
+        btnPedir.addEventListener('click', () => realizarAccion('/api/blackjack/pedir'));
+        btnPlantarse.addEventListener('click', () => realizarAccion('/api/blackjack/plantarse'));
+
+        async function iniciarPartida() {
+            if (apuestaActual <= 0) {
+                mostrarMensaje("Por favor, haz una apuesta.");
+                return;
+            }
+            if (apuestaActual > saldo + apuestaActual) {
+                mostrarMensaje("Apuesta inválida. Saldo insuficiente.");
                 return;
             }
 
-            this.currentBet += montoNum;
-            this.balance -= montoNum;
-            this.currentBetEl.textContent = this.currentBet;
-            this.balanceEl.textContent = this.balance;
-            this.actualizarOpcionesApuesta();
-        }
-
-        eliminarApuesta() {
-            this.balance += this.currentBet;
-            this.currentBet = 0;
-            this.currentBetEl.textContent = this.currentBet;
-            this.balanceEl.textContent = this.balance;
-            this.actualizarOpcionesApuesta();
-            this.gameMessageEl.textContent = 'Apuesta eliminada';
-            this.gameMessageEl.classList.remove('error-message');
-        }
-
-        actualizarOpcionesApuesta() {
-            this.betOptions.forEach(option => {
-                const valor = parseInt(option.getAttribute('data-value'));
-                if (valor > this.balance) {
-                    option.classList.add('disabled');
-                } else {
-                    option.classList.remove('disabled');
-                }
-                option.classList.remove('selected');
-            });
-        }
-
-        mostrarError(mensaje) {
-            this.gameMessageEl.textContent = mensaje;
-            this.gameMessageEl.classList.add('error-message');
-            setTimeout(() => {
-                this.gameMessageEl.classList.remove('error-message');
-            }, 3000);
-        }
-
-        async nuevaPartida() {
-            if (this.currentBet <= 0) {
-                this.mostrarError('Selecciona una apuesta primero');
-                return;
-            }
-
-            this.playerCartasAnteriores = [];
-            this.dealerCartasAnteriores = [];
-            this.jugadorSePaso = false;
+            juegoActivo = true;
+            actualizarEstadoBotones();
+            limpiarMesa();
+            mostrarMensaje('');
 
             try {
-                const response = await fetch(`${this.baseUrl}/nueva-partida`, {
+                const response = await fetch('/api/blackjack/iniciar', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        apuesta: this.currentBet
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apuesta: apuestaActual })
                 });
 
-                if (response.ok) {
-                    const estado = await response.json();
-                    this.actualizarUI(estado);
-                } else {
-                    this.mostrarError('Error al iniciar partida');
+                const estado = await response.json();
+
+                if (!response.ok) {
+                     throw new Error(estado.mensaje || 'Apuesta rechazada por el servidor.');
+                }
+
+                await animarRepartoInicial(estado);
+                renderizarPuntos(estado);
+                mostrarMensaje(estado.mensaje);
+
+                if (!estado.juegoActivo) { // Ocurrió un Blackjack
+                    finalizarRonda(estado);
                 }
 
             } catch (error) {
-                console.error('Error:', error);
-                this.mostrarError('Error de conexión');
+                console.error("Error al iniciar partida:", error);
+                mostrarMensaje(error.message);
+                saldo += apuestaActual;
+                apuestaActual = 0;
+                actualizarInfoApuestaYSaldo();
+                juegoActivo = false;
+                actualizarEstadoBotones();
             }
         }
 
-        async pedirCarta() {
+        async function realizarAccion(endpoint) {
             try {
-                const response = await fetch(`${this.baseUrl}/pedir-carta`, {
-                    method: 'POST'
-                });
+                const response = await fetch(endpoint, { method: 'POST' });
+                if (!response.ok) throw new Error('Acción no válida.');
+                const estado = await response.json();
 
-                if (response.ok) {
-                    const estado = await response.json();
-                    this.actualizarUI(estado);
-                }
+                mostrarMensaje('');
 
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        }
+                if (endpoint.includes('plantarse')) {
+                    await animarTurnoCrupier(estado);
+                    finalizarRonda(estado);
+                } else { // 'pedir'
+                    await animarRepartoCarta(cartasJugadorEl, estado.manosJugador[0].cartas.slice(-1)[0]);
+                    renderizarPuntos(estado);
 
-        async plantarse() {
-            try {
-                const response = await fetch(`${this.baseUrl}/plantarse`, {
-                    method: 'POST'
-                });
-
-                if (response.ok) {
-                    const estado = await response.json();
-
-                    if (estado.mensaje.includes('¡Ganaste!') || estado.mensaje.includes('BLACKJACK')) {
-                        this.balance += this.currentBet * 2;
-                    } else if (estado.mensaje.includes('Empate')) {
-                        this.balance += this.currentBet;
+                    if (!estado.juegoActivo) {
+                        await sleep(500);
+                        await animarTurnoCrupier(estado);
+                        finalizarRonda(estado);
                     }
-
-                    this.currentBet = 0;
-                    this.actualizarUI(estado);
                 }
-
             } catch (error) {
-                console.error('Error:', error);
+                console.error(`Error en la acción ${endpoint}:`, error);
+                mostrarMensaje("Error de comunicación.");
             }
         }
 
-        actualizarUI(estado) {
-            this.playerPointsEl.textContent = this.obtenerPuntosJugador(estado);
-
-            if (estado.mensaje && estado.mensaje.includes('Te pasaste')) {
-                this.jugadorSePaso = true;
-                this.dealerPointsEl.textContent = '?';
-            } else if (!estado.juegoActivo && !this.jugadorSePaso) {
-                const puntosReales = this.calcularPuntosReales(estado.cartasCrupier);
-                this.dealerPointsEl.textContent = puntosReales;
-            } else {
-                this.dealerPointsEl.textContent = estado.puntosCrupier || '?';
-            }
-
-            this.renderCartasJugador(estado);
-            this.renderCartasCrupier(estado);
-
-            this.balanceEl.textContent = this.balance;
-            this.currentBetEl.textContent = estado.apuestaActual || 0;
-            this.gameMessageEl.textContent = estado.mensaje || '';
-
-            this.hitBtn.disabled = !estado.juegoActivo;
-            this.standBtn.disabled = !estado.juegoActivo;
-
-            this.actualizarOpcionesApuesta();
+        function limpiarMesa() {
+            cartasCrupierEl.innerHTML = '';
+            cartasJugadorEl.innerHTML = '';
+            puntosCrupierEl.textContent = '';
+            puntosJugadorEl.textContent = '';
         }
 
-        obtenerPuntosJugador(estado) {
-            if (estado.manosJugador && estado.manosJugador.length > 0) {
-                return estado.manosJugador[0].puntos || 0;
-            }
-            return 0;
+        async function animarRepartoInicial(estado) {
+            const [c1j, c2j] = estado.manosJugador[0].cartas;
+            const [c1c, c2c] = estado.cartasCrupier;
+
+            await animarRepartoCarta(cartasJugadorEl, c1j);
+            await animarRepartoCarta(cartasCrupierEl, c1c);
+            await animarRepartoCarta(cartasJugadorEl, c2j);
+            await animarRepartoCarta(cartasCrupierEl, c2c, true);
         }
 
-        calcularPuntosReales(cartas) {
-            if (!cartas || cartas.length === 0) return 0;
-
+        // --- INICIO DE LA CORRECCIÓN ---
+        function calcularPuntosMano(cartas) {
             let puntos = 0;
             let ases = 0;
-
-            cartas.forEach(carta => {
-                if (carta.valor === 'A') {
-                    puntos += 11;
+            for (const carta of cartas) {
+                if (!carta) continue;
+                const valor = carta.valor;
+                if (valor === 'A') {
                     ases++;
-                } else if (['K', 'Q', 'J', '10'].includes(carta.valor)) {
+                    puntos += 11;
+                } else if (['K', 'Q', 'J', '10'].includes(valor)) {
                     puntos += 10;
                 } else {
-                    puntos += parseInt(carta.valor);
+                    puntos += parseInt(valor);
                 }
-            });
-
+            }
             while (puntos > 21 && ases > 0) {
                 puntos -= 10;
                 ases--;
             }
-
             return puntos;
         }
 
-        renderCartasJugador(estado) {
-            this.playerCardsEl.innerHTML = '';
+        async function animarTurnoCrupier(estadoFinal) {
+            const cartasDelCrupier = estadoFinal.cartasCrupier;
 
-            if (estado.manosJugador && estado.manosJugador.length > 0) {
-                const cartasActuales = estado.manosJugador[0].cartas || [];
-                const nuevasCartas = this.obtenerNuevasCartas(cartasActuales, this.playerCartasAnteriores);
-                this.playerCartasAnteriores = [...cartasActuales];
+            const cartaOcultaEl = cartasCrupierEl.querySelector('.carta-container:not(.flipped)');
+            if (cartaOcultaEl) {
+                cartaOcultaEl.classList.add('flipped');
+                await sleep(600);
+                puntosCrupierEl.textContent = `: ${calcularPuntosMano(cartasDelCrupier.slice(0, 2))}`;
+            }
 
-                this.renderCartasConAnimacion(cartasActuales, nuevasCartas, this.playerCardsEl);
+            const cartasYaEnMesa = 2;
+            for (let i = cartasYaEnMesa; i < cartasDelCrupier.length; i++) {
+                await sleep(800);
+                await animarRepartoCarta(cartasCrupierEl, cartasDelCrupier[i]);
+                puntosCrupierEl.textContent = `: ${calcularPuntosMano(cartasDelCrupier.slice(0, i + 1))}`;
+            }
+
+            await sleep(500);
+            puntosCrupierEl.textContent = `: ${estadoFinal.puntosCrupier}`;
+        }
+        // --- FIN DE LA CORRECCIÓN ---
+
+        async function animarRepartoCarta(contenedor, carta, oculta = false) {
+            if (!carta) {
+                console.error("Se intentó renderizar una carta inválida (null o undefined).");
+                return;
+            }
+            const elementoCarta = crearElementoCarta(carta);
+            contenedor.appendChild(elementoCarta);
+            await sleep(50);
+            if (!oculta) {
+                elementoCarta.classList.add('flipped');
+            }
+            await sleep(500);
+        }
+
+        function crearElementoCarta(carta) {
+            if (!carta) {
+                console.error("Se intentó renderizar una carta inválida (null o undefined).");
+                const errorDiv = document.createElement('div');
+                errorDiv.textContent = 'Error';
+                return errorDiv;
+            }
+            const container = document.createElement('div');
+            container.className = 'carta-container';
+            const back = document.createElement('div');
+            back.className = 'carta back';
+            container.appendChild(back);
+            const front = document.createElement('div');
+            const paloInfo = obtenerPaloYColor(carta.palo);
+            front.className = `carta front ${paloInfo.color}`;
+            front.innerHTML = `
+                <span class="valor-top">${carta.valor}</span>
+                <span class="palo">${paloInfo.simbolo}</span>
+                <span class="valor-bottom">${carta.valor}</span>
+            `;
+            container.appendChild(front);
+            return container;
+        }
+
+        function renderizarPuntos(estado) {
+            puntosCrupierEl.textContent = `: ${estado.puntosCrupier}`;
+            puntosJugadorEl.textContent = `: ${estado.manosJugador[0].puntos}`;
+        }
+
+        function finalizarRonda(estado) {
+            renderizarPuntos(estado);
+            mostrarMensaje(estado.mensaje);
+
+            saldo = estado.saldoJugador;
+            juegoActivo = false;
+            apuestaActual = 0;
+
+            actualizarEstadoBotones();
+
+            setTimeout(() => {
+                document.querySelectorAll('.carta-container').forEach(c => c.classList.add('disappearing'));
+            }, 2500);
+             setTimeout(() => {
+                limpiarMesa();
+                actualizarInfoApuestaYSaldo();
+             }, 3000);
+        }
+
+        function actualizarEstadoBotones() {
+            btnPedir.disabled = !juegoActivo;
+            btnPlantarse.disabled = !juegoActivo;
+            btnNuevaPartida.disabled = juegoActivo;
+            btnLimpiarApuesta.disabled = juegoActivo;
+            fichasContainer.style.pointerEvents = juegoActivo ? 'none' : 'auto';
+            fichasContainer.style.opacity = juegoActivo ? 0.5 : 1;
+        }
+
+        function actualizarInfoApuestaYSaldo() {
+            apuestaEl.textContent = `Apuesta: $${apuestaActual}`;
+            saldoEl.textContent = `Saldo: $${saldo}`;
+            btnNuevaPartida.disabled = apuestaActual <= 0 || apuestaActual > saldo + apuestaActual;
+        }
+
+        function mostrarMensaje(texto) {
+            mensajeEl.textContent = texto || '';
+        }
+
+        function obtenerPaloYColor(paloStr) {
+            switch (paloStr.toLowerCase()) {
+                case 'corazones': return { simbolo: '&hearts;', color: 'red' };
+                case 'diamantes': return { simbolo: '&diams;', color: 'red' };
+                case 'picas': return { simbolo: '&spades;', color: 'black' };
+                case 'tréboles': return { simbolo: '&clubs;', color: 'black' };
+                default: return { simbolo: '?', color: 'black' };
             }
         }
 
-        renderCartasCrupier(estado) {
-            this.dealerCardsEl.innerHTML = '';
-
-            const cartasActuales = estado.cartasCrupier || [];
-            const mostrarTodas = !estado.juegoActivo && !this.jugadorSePaso;
-
-            const cartasVisibles = [];
-            const cartasOcultas = [];
-
-            cartasActuales.forEach((carta, index) => {
-                if (mostrarTodas || index === 0) {
-                    cartasVisibles.push(carta);
-                } else {
-                    cartasOcultas.push(carta);
-                }
-            });
-
-            const nuevasCartas = this.obtenerNuevasCartas(cartasVisibles, this.dealerCartasAnteriores);
-            this.dealerCartasAnteriores = [...cartasVisibles];
-
-            this.renderCartasConAnimacion(cartasVisibles, nuevasCartas, this.dealerCardsEl);
-
-            cartasOcultas.forEach(() => {
-                this.crearCartaOculta(this.dealerCardsEl);
-            });
-
-            if (estado.juegoActivo && cartasActuales.length === 1) {
-                this.crearCartaOculta(this.dealerCardsEl);
-            }
-        }
-
-        obtenerNuevasCartas(cartasActuales, cartasAnteriores) {
-            return cartasActuales.filter(cartaActual =>
-                !cartasAnteriores.some(cartaAnterior =>
-                    this.sonCartasIguales(cartaActual, cartaAnterior)
-                )
-            );
-        }
-
-        sonCartasIguales(carta1, carta2) {
-            if (typeof carta1 === 'string' && typeof carta2 === 'string') {
-                return carta1 === carta2;
-            }
-            if (carta1.valor && carta2.valor) {
-                return carta1.valor === carta2.valor;
-            }
-            return false;
-        }
-
-        renderCartasConAnimacion(cartas, nuevasCartas, container) {
-            cartas.forEach((carta, index) => {
-                const esNueva = nuevasCartas.some(nuevaCarta =>
-                    this.sonCartasIguales(carta, nuevaCarta)
-                );
-
-                setTimeout(() => {
-                    this.crearCarta(carta, container, esNueva);
-                }, esNueva ? index * 300 : 0);
-            });
-        }
-
-        crearCarta(carta, container, esNueva = false) {
-            const cardEl = document.createElement('div');
-            cardEl.className = `card ${esNueva ? 'new-card' : ''}`;
-
-            let valor = '?';
-            if (typeof carta === 'string') {
-                valor = carta;
-            } else if (carta.valor) {
-                valor = carta.valor;
-            }
-
-            cardEl.textContent = valor;
-
-            if (['J', 'Q', 'K'].includes(valor)) {
-                cardEl.classList.add('red');
-            }
-
-            container.appendChild(cardEl);
-        }
-
-        crearCartaOculta(container) {
-            const cardEl = document.createElement('div');
-            cardEl.className = 'card card-back';
-            cardEl.textContent = '?';
-            container.appendChild(cardEl);
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        new BlackjackFrontend();
+        actualizarInfoApuestaYSaldo();
     });
 </script>
+
 </body>
 </html>
+

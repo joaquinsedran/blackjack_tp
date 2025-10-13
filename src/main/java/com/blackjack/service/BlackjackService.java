@@ -1,187 +1,162 @@
 package com.blackjack.service;
 
 import com.blackjack.model.*;
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Service
 public class BlackjackService {
     private Mazo mazo;
-    private Jugador jugador;
-    private Crupier crupier;
+    private Mano manoCrupier;
+    private List<Mano> manosJugador;
+    private int manoActivaIndex;
     private boolean juegoActivo;
     private int saldoJugador;
-    private int apuestaActual;
 
     public BlackjackService() {
-        System.out.println("=== INICIANDO BLACKJACK SERVICE ===");
-        reiniciarJuego();
+        this.saldoJugador = 1000;
+        reiniciarPartida();
     }
 
-    public void reiniciarJuego() {
+    private void reiniciarPartida() {
         this.mazo = new Mazo();
-        this.jugador = new Jugador("Jugador");
-        this.crupier = new Crupier();
+        this.manoCrupier = new Mano();
+        this.manosJugador = new ArrayList<>();
+        this.manosJugador.add(new Mano());
+        this.manoActivaIndex = 0;
         this.juegoActivo = false;
-        this.saldoJugador = 1000;
-        this.apuestaActual = 0;
-        System.out.println("=== JUEGO REINICIADO ===");
     }
 
     public JuegoEstado iniciarNuevaPartida(int apuesta) {
-        reiniciarJuego();
-
-        if (apuesta > saldoJugador || apuesta <= 0) {
+        if (apuesta <= 0 || apuesta > saldoJugador) {
             JuegoEstado estadoError = obtenerEstadoActual();
-            estadoError.setMensaje("Apuesta inválida");
+            estadoError.setMensaje("Apuesta inválida o saldo insuficiente.");
             return estadoError;
         }
 
-        mazo.barajar();
+        reiniciarPartida();
+        saldoJugador -= apuesta;
+        manosJugador.get(0).setApuesta(apuesta);
 
-        Carta carta1Jugador = mazo.sacarCarta();
-        Carta carta1Crupier = mazo.sacarCarta();
-        Carta carta2Jugador = mazo.sacarCarta();
-        Carta carta2Crupier = mazo.sacarCarta();
-
-        jugador.recibirCarta(carta1Jugador);
-        crupier.recibirCarta(carta1Crupier);
-        jugador.recibirCarta(carta2Jugador);
-        crupier.recibirCarta(carta2Crupier);
+        // Repartir cartas
+        manosJugador.get(0).agregarCarta(mazo.sacarCarta());
+        manoCrupier.agregarCarta(mazo.sacarCarta());
+        manosJugador.get(0).agregarCarta(mazo.sacarCarta());
+        manoCrupier.agregarCarta(mazo.sacarCarta());
 
         juegoActivo = true;
-        apuestaActual = apuesta;
-        saldoJugador -= apuesta;
 
-        JuegoEstado estado = obtenerEstadoActual();
-        estado.setMensaje("Nueva partida iniciada. ¿Pedir carta o plantarse?");
-
-        if (jugador.tieneBlackjack()) {
-            estado.setMensaje("¡BLACKJACK! ¡Ganaste!");
-            saldoJugador += apuestaActual * 3;
-            juegoActivo = false;
-            estado.setJuegoActivo(false);
-            estado.setSaldoJugador(saldoJugador);
+        if (manosJugador.get(0).esBlackjack()) {
+            return finalizarPartidaPorBlackjack();
         }
 
+        JuegoEstado estado = obtenerEstadoActual();
+        estado.setMensaje("Es tu turno. ¿Pedir o plantarse?");
+        return estado;
+    }
+
+    public JuegoEstado jugadorPideCarta() {
+        if (!juegoActivo) return obtenerEstadoActual();
+
+        Mano manoActual = manosJugador.get(manoActivaIndex);
+        manoActual.agregarCarta(mazo.sacarCarta());
+
+        if (manoActual.sePaso()) {
+            return jugadorSePlanta();
+        }
+
+        return obtenerEstadoActual();
+    }
+
+    public JuegoEstado jugadorSePlanta() {
+        if (!juegoActivo) return obtenerEstadoActual();
+
+        Mano manoActual = manosJugador.get(manoActivaIndex);
+        manoActual.setCompletada(true);
+        manoActivaIndex++;
+
+        if (manoActivaIndex >= manosJugador.size()) {
+            return turnoCrupier();
+        }
+
+        return obtenerEstadoActual();
+    }
+
+    private JuegoEstado turnoCrupier() {
+        juegoActivo = false; // El turno del jugador ha terminado
+
+        while (manoCrupier.getPuntos() < 17) {
+            manoCrupier.agregarCarta(mazo.sacarCarta());
+        }
+
+        return determinarGanador();
+    }
+
+    private JuegoEstado determinarGanador() {
+        for (Mano manoJugador : manosJugador) {
+            if (manoJugador.sePaso()) {
+                // El jugador ya perdió, no se le paga nada
+            } else if (manoCrupier.sePaso() || manoJugador.getPuntos() > manoCrupier.getPuntos()) {
+                saldoJugador += manoJugador.getApuesta() * 2; // Gana
+            } else if (manoJugador.getPuntos() == manoCrupier.getPuntos()) {
+                saldoJugador += manoJugador.getApuesta(); // Empate
+            }
+        }
+
+        JuegoEstado estadoFinal = obtenerEstadoActual();
+        estadoFinal.setMensaje(generarMensajeFinal()); // El mensaje se genera aquí, al final de todo
+        return estadoFinal;
+    }
+
+    private JuegoEstado finalizarPartidaPorBlackjack() {
+        juegoActivo = false;
+        Mano manoJugador = manosJugador.get(0);
+        saldoJugador += (int)(manoJugador.getApuesta() * 2.5);
+
+        JuegoEstado estado = obtenerEstadoActual();
+        estado.setMensaje("¡Blackjack! ¡Ganaste!"); // El mensaje se genera aquí
         return estado;
     }
 
     public JuegoEstado obtenerEstadoActual() {
         JuegoEstado estado = new JuegoEstado();
-        estado.setMensaje(juegoActivo ? "Tu turno - ¿Pedir carta o plantarse?" : "¡Bienvenido al Blackjack!");
-        estado.setSaldoJugador(saldoJugador);
-        estado.setApuestaActual(apuestaActual);
         estado.setJuegoActivo(juegoActivo);
+        estado.setSaldoJugador(saldoJugador);
+        estado.setManosJugador(new ArrayList<>());
+        for(Mano mano : manosJugador) {
+            estado.getManosJugador().add(new Mano(mano));
+        }
+        estado.setManoActivaIndex(manoActivaIndex);
 
-        estado.setCartasCrupier(new ArrayList<>(crupier.getMano()));
+        estado.setCartasCrupier(new ArrayList<>(manoCrupier.getCartas()));
 
-        if (juegoActivo && crupier.getMano().size() >= 2) {
-            estado.setPuntosCrupier(crupier.getMano().get(0).getValorNumerico());
+        if (juegoActivo && !manoCrupier.getCartas().isEmpty()) {
+            estado.setPuntosCrupier(manoCrupier.getCartas().get(0).getValorNumerico());
         } else {
-            estado.setPuntosCrupier(crupier.getPuntuacion());
+            estado.setPuntosCrupier(manoCrupier.getPuntos());
         }
 
-        ArrayList<Mano> manos = new ArrayList<>();
-        Mano manoPrincipal = new Mano();
-
-        for (Carta carta : jugador.getMano()) {
-            manoPrincipal.agregarCarta(carta);
-        }
-
-        manos.add(manoPrincipal);
-        estado.setManosJugador(manos);
-
+        // Se eliminó la lógica de mensajes de aquí para evitar que se muestren antes de tiempo.
         return estado;
     }
 
-    public JuegoEstado jugadorPideCarta() {
-        if (!juegoActivo) {
-            return obtenerEstadoActual();
-        }
-
-        Carta nuevaCarta = mazo.sacarCarta();
-        jugador.recibirCarta(nuevaCarta);
-
-        JuegoEstado estado = obtenerEstadoActual();
-
-        if (jugador.sePasó()) {
-            estado.setMensaje("¡Te pasaste de 21! Has perdido.");
-            juegoActivo = false;
-            estado.setJuegoActivo(false);
-        } else if (jugador.getPuntuacion() == 21) {
-            estado.setMensaje("¡Tienes 21! ¿Te plantas?");
-        } else {
-            estado.setMensaje("Carta recibida. ¿Otra carta o te plantas?");
-        }
-
-        return estado;
-    }
-
-    public JuegoEstado jugadorSePlanta() {
-        if (!juegoActivo) {
-            return obtenerEstadoActual();
-        }
-
-        juegoActivo = false;
-
-        turnoCrupier();
-        String resultado = determinarGanador();
-
-        JuegoEstado estado = obtenerEstadoActual();
-        estado.setJuegoActivo(false);
-        estado.setMensaje(resultado);
-
-        return estado;
-    }
-
-    private void turnoCrupier() {
-        System.out.println("=== INICIO TURNO CRUPIER ===");
-        System.out.println("Cartas crupier: " + crupier.getMano());
-        System.out.println("Puntos crupier: " + crupier.getPuntuacion());
-        System.out.println("Debe pedir carta: " + crupier.debePedirCarta());
-
-        int contadorCartas = 0;
-        while (crupier.debePedirCarta() && !crupier.sePasó()) {
-            Carta nuevaCarta = mazo.sacarCarta();
-            if (nuevaCarta != null) {
-                System.out.println("Crupier recibe carta " + (++contadorCartas) + ": " + nuevaCarta.getValor());
-                crupier.recibirCarta(nuevaCarta);
-                System.out.println("Nuevos puntos: " + crupier.getPuntuacion());
-            } else {
-                System.out.println("¡No hay más cartas en el mazo!");
-                break;
-            }
-        }
-
-        System.out.println("=== FIN TURNO CRUPIER ===");
-        System.out.println("Puntos finales: " + crupier.getPuntuacion());
-        System.out.println("Cartas finales: " + crupier.getMano());
-    }
-
-    private String determinarGanador() {
-        int puntosJugador = jugador.getPuntuacion();
-        int puntosCrupier = crupier.getPuntuacion();
-
-        if (jugador.sePasó()) {
+    private String generarMensajeFinal() {
+        Mano manoJugador = manosJugador.get(0);
+        if (manoJugador.sePaso()) {
             return "¡Te pasaste de 21! Gana el crupier.";
-        } else if (crupier.sePasó()) {
-            saldoJugador += apuestaActual * 2;
-            return "¡Crupier se pasó de 21! ¡Ganaste!";
-        } else if (puntosJugador > puntosCrupier) {
-            saldoJugador += apuestaActual * 2;
-            return "¡Felicidades! ¡Ganaste!";
-        } else if (puntosCrupier > puntosJugador) {
-            return "Gana el crupier.";
-        } else {
-            saldoJugador += apuestaActual;
-            return "¡Empate! Se devuelve tu apuesta.";
         }
-    }
-
-    public JuegoEstado seleccionarFicha(int valor) {
-        JuegoEstado estado = obtenerEstadoActual();
-        estado.setMensaje("Ficha de $" + valor + " seleccionada");
-        estado.setApuestaActual(valor);
-        return estado;
+        if (manoCrupier.sePaso()) {
+            return "¡Crupier se pasó de 21! ¡Ganaste!";
+        }
+        if (manoJugador.getPuntos() > manoCrupier.getPuntos()) {
+            return "¡Felicidades! ¡Ganaste!";
+        }
+        if (manoCrupier.getPuntos() > manoJugador.getPuntos()) {
+            return "Gana el crupier.";
+        }
+        return "¡Empate!";
     }
 }
+

@@ -23,6 +23,17 @@ public class Mano {
         this.completada = false;
     }
 
+    /**
+     * Constructor de copia. Soluciona el error de compilación en BlackjackService.
+     * @param otra La mano a copiar.
+     */
+    public Mano(Mano otra) {
+        this.cartas = new ArrayList<>(otra.getCartas());
+        this.apuesta = otra.getApuesta();
+        this.puntos = otra.getPuntos();
+        this.completada = otra.isCompletada();
+    }
+
     public List<Carta> getCartas() {
         return cartas;
     }
@@ -56,8 +67,10 @@ public class Mano {
     }
 
     public void agregarCarta(Carta carta) {
-        this.cartas.add(carta);
-        this.puntos = calcularPuntos();
+        if (carta != null) {
+            this.cartas.add(carta);
+            this.puntos = calcularPuntos();
+        }
     }
 
     public boolean puedeDividir() {
@@ -70,35 +83,30 @@ public class Mano {
     }
 
     public int calcularPuntos() {
-        int puntos = 0;
+        int puntosCalculados = 0;
         int ases = 0;
 
         for (Carta carta : cartas) {
-            String valor = carta.getValor();
-
-            if (valor.equals("A")) {
+            puntosCalculados += carta.getValorNumerico();
+            if (carta.getValor().equals("A")) {
                 ases++;
-                puntos += 11;
-            } else if (valor.equals("K") || valor.equals("Q") || valor.equals("J") || valor.equals("10")) {
-                puntos += 10;
-            } else {
-                puntos += Integer.parseInt(valor);
             }
         }
 
-        while (puntos > 21 && ases > 0) {
-            puntos -= 10;
+        while (puntosCalculados > 21 && ases > 0) {
+            puntosCalculados -= 10;
             ases--;
         }
 
-        return puntos;
+        return puntosCalculados;
     }
 
     public boolean esBlackjack() {
-        return cartas.size() == 2 && puntos == 21;
+        return this.cartas.size() == 2 && calcularPuntos() == 21;
     }
 
     public boolean sePaso() {
-        return puntos > 21;
+        return calcularPuntos() > 21;
     }
 }
+
