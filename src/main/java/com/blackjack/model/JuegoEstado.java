@@ -30,7 +30,7 @@ public class JuegoEstado {
         this.puntosCrupier = 0;
     }
 
-    // Getters y Setters
+
     public boolean isJuegoActivo() { return juegoActivo; }
     public void setJuegoActivo(boolean juegoActivo) { this.juegoActivo = juegoActivo; }
 
@@ -58,9 +58,9 @@ public class JuegoEstado {
     public boolean isPuedeDividir() { return puedeDividir; }
     public void setPuedeDividir(boolean puedeDividir) { this.puedeDividir = puedeDividir; }
 
-    public boolean isPuedeDoblar() { return puedeDoblar; }
-    public void setPuedeDoblar(boolean puedeDoblar) { this.puedeDoblar = puedeDoblar; }
-
     public int getPuntosCrupier() { return puntosCrupier; }
     public void setPuntosCrupier(int puntosCrupier) { this.puntosCrupier = puntosCrupier; }
+
+    public boolean isPuedeDoblar() { return puedeDoblar; }
+    public void setPuedeDoblar(boolean puedeDoblar) { this.puedeDoblar = puedeDoblar; }
 }

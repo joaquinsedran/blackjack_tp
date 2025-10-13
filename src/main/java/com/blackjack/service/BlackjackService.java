@@ -40,7 +40,6 @@ public class BlackjackService {
         saldoJugador -= apuesta;
         manosJugador.get(0).setApuesta(apuesta);
 
-        // Repartir cartas
         manosJugador.get(0).agregarCarta(mazo.sacarCarta());
         manoCrupier.agregarCarta(mazo.sacarCarta());
         manosJugador.get(0).agregarCarta(mazo.sacarCarta());
@@ -64,7 +63,9 @@ public class BlackjackService {
         manoActual.agregarCarta(mazo.sacarCarta());
 
         if (manoActual.sePaso()) {
-            return jugadorSePlanta();
+            manoActual.setCompletada(true);
+            juegoActivo = false;
+            return turnoCrupier();
         }
 
         return obtenerEstadoActual();
@@ -84,8 +85,30 @@ public class BlackjackService {
         return obtenerEstadoActual();
     }
 
+    public JuegoEstado jugadorDobla() {
+        if (!juegoActivo) return obtenerEstadoActual();
+
+        Mano manoActual = manosJugador.get(manoActivaIndex);
+
+        if (!manoActual.puedeDoblar() || saldoJugador < manoActual.getApuesta()) {
+            JuegoEstado estadoError = obtenerEstadoActual();
+            estadoError.setMensaje("No puedes doblar en este momento.");
+            return estadoError;
+        }
+
+        saldoJugador -= manoActual.getApuesta();
+        manoActual.setApuesta(manoActual.getApuesta() * 2);
+
+        manoActual.agregarCarta(mazo.sacarCarta());
+
+        manoActual.setCompletada(true);
+        juegoActivo = false;
+
+        return turnoCrupier();
+    }
+
     private JuegoEstado turnoCrupier() {
-        juegoActivo = false; // El turno del jugador ha terminado
+        juegoActivo = false;
 
         while (manoCrupier.getPuntos() < 17) {
             manoCrupier.agregarCarta(mazo.sacarCarta());
@@ -97,16 +120,15 @@ public class BlackjackService {
     private JuegoEstado determinarGanador() {
         for (Mano manoJugador : manosJugador) {
             if (manoJugador.sePaso()) {
-                // El jugador ya perdió, no se le paga nada
             } else if (manoCrupier.sePaso() || manoJugador.getPuntos() > manoCrupier.getPuntos()) {
-                saldoJugador += manoJugador.getApuesta() * 2; // Gana
+                saldoJugador += manoJugador.getApuesta() * 2;
             } else if (manoJugador.getPuntos() == manoCrupier.getPuntos()) {
-                saldoJugador += manoJugador.getApuesta(); // Empate
+                saldoJugador += manoJugador.getApuesta();
             }
         }
 
         JuegoEstado estadoFinal = obtenerEstadoActual();
-        estadoFinal.setMensaje(generarMensajeFinal()); // El mensaje se genera aquí, al final de todo
+        estadoFinal.setMensaje(generarMensajeFinal());
         return estadoFinal;
     }
 
@@ -116,7 +138,7 @@ public class BlackjackService {
         saldoJugador += (int)(manoJugador.getApuesta() * 2.5);
 
         JuegoEstado estado = obtenerEstadoActual();
-        estado.setMensaje("¡Blackjack! ¡Ganaste!"); // El mensaje se genera aquí
+        estado.setMensaje("¡Blackjack! ¡Ganaste!");
         return estado;
     }
 
@@ -124,12 +146,13 @@ public class BlackjackService {
         JuegoEstado estado = new JuegoEstado();
         estado.setJuegoActivo(juegoActivo);
         estado.setSaldoJugador(saldoJugador);
+
         estado.setManosJugador(new ArrayList<>());
         for(Mano mano : manosJugador) {
             estado.getManosJugador().add(new Mano(mano));
         }
-        estado.setManoActivaIndex(manoActivaIndex);
 
+        estado.setManoActivaIndex(manoActivaIndex);
         estado.setCartasCrupier(new ArrayList<>(manoCrupier.getCartas()));
 
         if (juegoActivo && !manoCrupier.getCartas().isEmpty()) {
@@ -138,7 +161,14 @@ public class BlackjackService {
             estado.setPuntosCrupier(manoCrupier.getPuntos());
         }
 
-        // Se eliminó la lógica de mensajes de aquí para evitar que se muestren antes de tiempo.
+        if (juegoActivo && !manosJugador.isEmpty()) {
+            Mano manoActiva = manosJugador.get(manoActivaIndex);
+            boolean puedePagar = saldoJugador >= manoActiva.getApuesta();
+            estado.setPuedeDoblar(manoActiva.puedeDoblar() && puedePagar);
+        } else {
+            estado.setPuedeDoblar(false);
+        }
+
         return estado;
     }
 

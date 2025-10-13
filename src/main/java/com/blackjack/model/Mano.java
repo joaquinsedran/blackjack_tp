@@ -23,10 +23,7 @@ public class Mano {
         this.completada = false;
     }
 
-    /**
-     * Constructor de copia. Soluciona el error de compilación en BlackjackService.
-     * @param otra La mano a copiar.
-     */
+
     public Mano(Mano otra) {
         this.cartas = new ArrayList<>(otra.getCartas());
         this.apuesta = otra.getApuesta();

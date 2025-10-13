@@ -2,8 +2,9 @@ package com.blackjack.controller;
 
 import com.blackjack.model.JuegoEstado;
 import com.blackjack.service.BlackjackService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
@@ -13,30 +14,30 @@ public class BlackjackController {
 
     private final BlackjackService blackjackService;
 
-    @Autowired
     public BlackjackController(BlackjackService blackjackService) {
         this.blackjackService = blackjackService;
     }
 
-    @GetMapping("/estado")
-    public JuegoEstado obtenerEstado() {
-        return blackjackService.obtenerEstadoActual();
-    }
-
     @PostMapping("/iniciar")
-    public JuegoEstado iniciarPartida(@RequestBody Map<String, Integer> payload) {
+    public ResponseEntity<JuegoEstado> iniciarNuevaPartida(@RequestBody Map<String, Integer> payload) {
         int apuesta = payload.get("apuesta");
-        return blackjackService.iniciarNuevaPartida(apuesta);
+        JuegoEstado estado = blackjackService.iniciarNuevaPartida(apuesta);
+        return ResponseEntity.ok(estado);
     }
 
     @PostMapping("/pedir")
-    public JuegoEstado pedirCarta() {
-        return blackjackService.jugadorPideCarta();
+    public ResponseEntity<JuegoEstado> jugadorPideCarta() {
+        return ResponseEntity.ok(blackjackService.jugadorPideCarta());
     }
 
     @PostMapping("/plantarse")
-    public JuegoEstado plantarse() {
-        return blackjackService.jugadorSePlanta();
+    public ResponseEntity<JuegoEstado> jugadorSePlanta() {
+        return ResponseEntity.ok(blackjackService.jugadorSePlanta());
+    }
+
+    @PostMapping("/doblar")
+    public ResponseEntity<JuegoEstado> jugadorDobla() {
+        return ResponseEntity.ok(blackjackService.jugadorDobla());
     }
 }
 

@@ -57,7 +57,7 @@ public class Crupier {
         return mano.size() == 2 && puntuacion == 21;
     }
 
-    // Getters
+
     public String getNombre() {
         return nombre;
     }
