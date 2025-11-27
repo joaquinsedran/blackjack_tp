@@ -1,9 +1,12 @@
 package com.blackjack.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Mano {
+public class Mano implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private List<Carta> cartas;
     private int apuesta;
     private int puntos;
@@ -25,6 +28,7 @@ public class Mano {
 
 
     public Mano(Mano otra) {
+        // Constructor copia para crear un DTO (JuegoEstado)
         this.cartas = new ArrayList<>(otra.getCartas());
         this.apuesta = otra.getApuesta();
         this.puntos = otra.getPuntos();
@@ -106,4 +110,3 @@ public class Mano {
         return calcularPuntos() > 21;
     }
 }
-

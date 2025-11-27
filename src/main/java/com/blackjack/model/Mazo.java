@@ -1,8 +1,9 @@
 package com.blackjack.model;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Mazo {
     private List<Carta> cartas;
@@ -12,15 +13,15 @@ public class Mazo {
     }
 
     private void crearYBarajar() {
-        cartas = new ArrayList<>();
         String[] palos = {"Corazones", "Diamantes", "Tréboles", "Picas"};
         String[] valores = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
 
-        for (String palo : palos) {
-            for (String valor : valores) {
-                cartas.add(new Carta(palo, valor));
-            }
-        }
+        this.cartas = Arrays.stream(palos)
+                .flatMap(palo -> Arrays.stream(valores)
+                        .map(valor -> new Carta(palo, valor)) // Operación intermedia: mapea cada valor a una nueva Carta
+                )
+                .collect(Collectors.toList()); // Operación terminal: recolecta todas las Cartas en una lista
+
         barajar();
     }
 
