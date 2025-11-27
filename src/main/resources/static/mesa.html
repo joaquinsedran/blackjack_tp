@@ -26,12 +26,11 @@
             color: var(--text-light);
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
+            align-items: flex-start;
+            min-height: 100vh;
             margin: 0;
             padding: 20px;
             box-sizing: border-box;
-            overflow: hidden;
             perspective: 1000px;
         }
 
@@ -118,10 +117,10 @@
         .carta.back {
             background-color: #001f3f;
             background-image:
-                linear-gradient(135deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
-                linear-gradient(225deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
-                linear-gradient(45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
-                linear-gradient(315deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%);
+                    linear-gradient(135deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+                    linear-gradient(225deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+                    linear-gradient(45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+                    linear-gradient(315deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%);
             background-position: 10px 0, 10px 0, 0 0, 0 0;
             background-size: 20px 20px;
             background-repeat: repeat;
@@ -179,6 +178,8 @@
         #btn-nueva-partida { background-color: var(--btn-green); color: white; }
         #btn-limpiar-apuesta { background-color: var(--btn-red); color: white; }
         #btn-doblar { background-color: var(--btn-blue); color: white; }
+        #btn-guardar-partida { background-color: #f7a049; color: white; }
+        #btn-cargar-partida { background-color: #55acee; color: white; }
 
         .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0,0,0,0.4); }
         .btn:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 2px 3px rgba(0,0,0,0.4); }
@@ -234,6 +235,8 @@
         <button id="btn-plantarse" class="btn" disabled>Plantarse</button>
         <button id="btn-doblar" class="btn" disabled>Doblar</button>
         <button id="btn-limpiar-apuesta" class="btn">Limpiar Apuesta</button>
+        <button id="btn-guardar-partida" class="btn">Guardar Partida</button>
+        <button id="btn-cargar-partida" class="btn">Cargar Partida</button>
     </div>
 
     <div class="fichas">
@@ -256,6 +259,8 @@
         const btnPlantarse = document.getElementById('btn-plantarse');
         const btnDoblar = document.getElementById('btn-doblar');
         const btnLimpiarApuesta = document.getElementById('btn-limpiar-apuesta');
+        const btnGuardarPartida = document.getElementById('btn-guardar-partida');
+        const btnCargarPartida = document.getElementById('btn-cargar-partida');
         const fichasContainer = document.querySelector('.fichas');
         const mensajeEl = document.getElementById('mensaje');
         const saldoEl = document.getElementById('saldo-jugador');
@@ -297,6 +302,79 @@
         btnPedir.addEventListener('click', () => realizarAccion('/api/blackjack/pedir'));
         btnPlantarse.addEventListener('click', () => realizarAccion('/api/blackjack/plantarse'));
         btnDoblar.addEventListener('click', () => realizarAccion('/api/blackjack/doblar'));
+        btnGuardarPartida.addEventListener('click', guardarPartida);
+        btnCargarPartida.addEventListener('click', cargarPartida);
+
+        async function guardarPartida() {
+            mostrarMensaje('Guardando partida...');
+            try {
+                const response = await fetch('/api/blackjack/guardar', { method: 'POST' });
+
+                const mensaje = await response.text();
+
+                if (!response.ok) {
+                    throw new Error('Error del servidor al guardar: ' + mensaje);
+                }
+
+                mostrarMensaje('✅ ' + mensaje);
+            } catch (error) {
+                console.error("Error al guardar partida:", error);
+                mostrarMensaje("❌ Error al guardar.");
+            }
+        }
+
+        async function cargarPartida() {
+            if (juegoActivo) {
+                mostrarMensaje('No puedes cargar una partida mientras estás jugando.');
+                return;
+            }
+            mostrarMensaje('Cargando partida...');
+            try {
+                const response = await fetch('/api/blackjack/cargar', { method: 'GET' });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error('Error al cargar la partida: ' + errorText);
+                }
+
+                const estado = await response.json();
+
+                limpiarMesa();
+
+                saldo = estado.saldoJugador;
+                apuestaActual = 0;
+                juegoActivo = estado.juegoActivo;
+
+                if (estado.cartasCrupier && estado.cartasCrupier.length > 0) {
+
+                    for (let i = 0; i < estado.cartasCrupier.length; i++) {
+                        const isHidden = (i === 1 && juegoActivo);
+                        const cartaContainer = crearElementoCarta(estado.cartasCrupier[i]);
+                        cartasCrupierEl.appendChild(cartaContainer);
+                        if (!isHidden) {
+                            cartaContainer.classList.add('flipped');
+                        }
+                    }
+
+                    for (const carta of estado.manosJugador[0].cartas) {
+                        const cartaContainer = crearElementoCarta(carta);
+                        cartasJugadorEl.appendChild(cartaContainer);
+                        cartaContainer.classList.add('flipped');
+                    }
+
+                    renderizarPuntos(estado);
+                }
+
+                mostrarMensaje('✅ Partida cargada con éxito.');
+
+            } catch (error) {
+                console.error("Error al cargar partida:", error);
+                mostrarMensaje("❌ Error al cargar. ¿El archivo 'blackjack_estado.dat' existe?");
+            } finally {
+                actualizarInfoApuestaYSaldo();
+                actualizarEstadoBotones();
+            }
+        }
 
         async function iniciarPartida() {
             if (apuestaActual <= 0) {
@@ -325,7 +403,7 @@
                 puedeDoblar = estado.puedeDoblar;
 
                 if (!response.ok) {
-                     throw new Error(estado.mensaje || 'Apuesta rechazada por el servidor.');
+                    throw new Error(estado.mensaje || 'Apuesta rechazada por el servidor.');
                 }
 
                 await animarRepartoInicial(estado);
@@ -507,10 +585,10 @@
             setTimeout(() => {
                 document.querySelectorAll('.carta-container').forEach(c => c.classList.add('disappearing'));
             }, 2500);
-             setTimeout(() => {
+            setTimeout(() => {
                 limpiarMesa();
                 actualizarInfoApuestaYSaldo();
-             }, 3000);
+            }, 3000);
         }
 
         function desactivarBotonesDeJuego() {
@@ -527,6 +605,8 @@
             btnLimpiarApuesta.disabled = juegoActivo;
             fichasContainer.style.pointerEvents = juegoActivo ? 'none' : 'auto';
             fichasContainer.style.opacity = juegoActivo ? 0.5 : 1;
+            btnGuardarPartida.disabled = juegoActivo;
+            btnCargarPartida.disabled = juegoActivo;
         }
 
         function actualizarInfoApuestaYSaldo() {
@@ -555,4 +635,3 @@
 
 </body>
 </html>
-

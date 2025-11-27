@@ -4,7 +4,7 @@ import com.blackjack.model.JuegoEstado;
 import com.blackjack.service.BlackjackService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import java.io.IOException;
 import java.util.Map;
 
 @RestController
@@ -19,25 +19,57 @@ public class BlackjackController {
     }
 
     @PostMapping("/iniciar")
-    public ResponseEntity<JuegoEstado> iniciarNuevaPartida(@RequestBody Map<String, Integer> payload) {
-        int apuesta = payload.get("apuesta");
-        JuegoEstado estado = blackjackService.iniciarNuevaPartida(apuesta);
-        return ResponseEntity.ok(estado);
+    public ResponseEntity<JuegoEstado> iniciarPartida(@RequestBody Object payload) {
+
+        // Pattern matching
+        if (payload instanceof Map payloadMap) {
+            Object apuestaObj = payloadMap.get("apuesta");
+            if (apuestaObj instanceof Integer apuesta) {
+                JuegoEstado estado = blackjackService.iniciarNuevaPartida(apuesta);
+                return ResponseEntity.ok(estado);
+            }
+        }
+
+        return ResponseEntity.badRequest().body(blackjackService.obtenerEstadoActual());
     }
 
     @PostMapping("/pedir")
     public ResponseEntity<JuegoEstado> jugadorPideCarta() {
-        return ResponseEntity.ok(blackjackService.jugadorPideCarta());
+        JuegoEstado estado = blackjackService.jugadorPideCarta();
+        return ResponseEntity.ok(estado);
     }
 
     @PostMapping("/plantarse")
     public ResponseEntity<JuegoEstado> jugadorSePlanta() {
-        return ResponseEntity.ok(blackjackService.jugadorSePlanta());
+        JuegoEstado estado = blackjackService.jugadorSePlanta();
+        return ResponseEntity.ok(estado);
     }
 
     @PostMapping("/doblar")
     public ResponseEntity<JuegoEstado> jugadorDobla() {
-        return ResponseEntity.ok(blackjackService.jugadorDobla());
+        JuegoEstado estado = blackjackService.jugadorDobla();
+        return ResponseEntity.ok(estado);
+    }
+
+    @GetMapping("/estado")
+    public ResponseEntity<JuegoEstado> obtenerEstado() {
+        JuegoEstado estado = blackjackService.obtenerEstadoActual();
+        return ResponseEntity.ok(estado);
+    }
+
+    @PostMapping("/guardar")
+    public ResponseEntity<String> guardarPartida() {
+        try {
+            blackjackService.guardarPartida();
+            return ResponseEntity.ok("Partida guardada con éxito.");
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body("Error al guardar la partida: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/cargar")
+    public ResponseEntity<JuegoEstado> cargarPartida() {
+        JuegoEstado estado = blackjackService.cargarPartida();
+        return ResponseEntity.ok(estado);
     }
 }
-

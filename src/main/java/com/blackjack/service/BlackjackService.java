@@ -3,11 +3,15 @@ package com.blackjack.service;
 import com.blackjack.model.*;
 import org.springframework.stereotype.Service;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class BlackjackService {
+
+    private static final String NOMBRE_ARCHIVO_ESTADO = "blackjack_estado.dat";
+
     private Mazo mazo;
     private Mano manoCrupier;
     private List<Mano> manosJugador;
@@ -16,8 +20,14 @@ public class BlackjackService {
     private int saldoJugador;
 
     public BlackjackService() {
-        this.saldoJugador = 1000;
-        reiniciarPartida();
+        JuegoEstado estadoInicial = cargarPartida();
+        if (estadoInicial.getSaldoJugador() == 1000 && !estadoInicial.isJuegoActivo()) {
+
+            this.saldoJugador = 1000;
+            reiniciarPartida();
+        } else {
+            actualizarEstadoInterno(estadoInicial);
+        }
     }
 
     private void reiniciarPartida() {
@@ -64,8 +74,11 @@ public class BlackjackService {
 
         if (manoActual.sePaso()) {
             manoActual.setCompletada(true);
-            juegoActivo = false;
-            return turnoCrupier();
+            manoActivaIndex++;
+            if (manoActivaIndex >= manosJugador.size()) {
+                juegoActivo = false;
+                return turnoCrupier();
+            }
         }
 
         return obtenerEstadoActual();
@@ -102,16 +115,22 @@ public class BlackjackService {
         manoActual.agregarCarta(mazo.sacarCarta());
 
         manoActual.setCompletada(true);
-        juegoActivo = false;
+        manoActivaIndex++;
 
         return turnoCrupier();
     }
 
     private JuegoEstado turnoCrupier() {
         juegoActivo = false;
+        manoActivaIndex = manosJugador.size();
 
-        while (manoCrupier.getPuntos() < 17) {
-            manoCrupier.agregarCarta(mazo.sacarCarta());
+        boolean algunaManoNoSePaso = manosJugador.stream().anyMatch(mano -> !mano.sePaso());
+
+        if (algunaManoNoSePaso) {
+
+            while (manoCrupier.getPuntos() < 17) {
+                manoCrupier.agregarCarta(mazo.sacarCarta());
+            }
         }
 
         return determinarGanador();
@@ -120,9 +139,12 @@ public class BlackjackService {
     private JuegoEstado determinarGanador() {
         for (Mano manoJugador : manosJugador) {
             if (manoJugador.sePaso()) {
+
             } else if (manoCrupier.sePaso() || manoJugador.getPuntos() > manoCrupier.getPuntos()) {
+
                 saldoJugador += manoJugador.getApuesta() * 2;
             } else if (manoJugador.getPuntos() == manoCrupier.getPuntos()) {
+
                 saldoJugador += manoJugador.getApuesta();
             }
         }
@@ -154,14 +176,13 @@ public class BlackjackService {
 
         estado.setManoActivaIndex(manoActivaIndex);
         estado.setCartasCrupier(new ArrayList<>(manoCrupier.getCartas()));
+        estado.setPuntosCrupier(manoCrupier.getPuntos());
 
         if (juegoActivo && !manoCrupier.getCartas().isEmpty()) {
             estado.setPuntosCrupier(manoCrupier.getCartas().get(0).getValorNumerico());
-        } else {
-            estado.setPuntosCrupier(manoCrupier.getPuntos());
         }
 
-        if (juegoActivo && !manosJugador.isEmpty()) {
+        if (juegoActivo && manoActivaIndex < manosJugador.size()) {
             Mano manoActiva = manosJugador.get(manoActivaIndex);
             boolean puedePagar = saldoJugador >= manoActiva.getApuesta();
             estado.setPuedeDoblar(manoActiva.puedeDoblar() && puedePagar);
@@ -173,7 +194,10 @@ public class BlackjackService {
     }
 
     private String generarMensajeFinal() {
+        if (manosJugador.isEmpty()) return "Partida finalizada.";
+
         Mano manoJugador = manosJugador.get(0);
+
         if (manoJugador.sePaso()) {
             return "¡Te pasaste de 21! Gana el crupier.";
         }
@@ -188,5 +212,54 @@ public class BlackjackService {
         }
         return "¡Empate!";
     }
-}
+    // serializacion
+    public void guardarPartida() throws IOException {
+        try (FileOutputStream archivoSalida = new FileOutputStream(NOMBRE_ARCHIVO_ESTADO);
+             ObjectOutputStream salidaObjeto = new ObjectOutputStream(archivoSalida))
+        {
+            JuegoEstado estadoAGuardar = obtenerEstadoActual();
+            salidaObjeto.writeObject(estadoAGuardar);
+            System.out.println("Partida guardada exitosamente en " + NOMBRE_ARCHIVO_ESTADO);
+        }
+    }
+     // deserializacion
+    public JuegoEstado cargarPartida() {
+        try (FileInputStream archivoEntrada = new FileInputStream(NOMBRE_ARCHIVO_ESTADO);
+             ObjectInputStream entradaObjeto = new ObjectInputStream(archivoEntrada))
+        {
+            JuegoEstado estadoCargado = (JuegoEstado) entradaObjeto.readObject();
+            System.out.println("Partida cargada exitosamente.");
+            return estadoCargado;
 
+        } catch (FileNotFoundException e) {
+            System.out.println("No se encontró el archivo de partida. Iniciando nuevo juego.");
+            return new JuegoEstado();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            System.err.println("Error al cargar la partida. Se inicia un nuevo juego.");
+            return new JuegoEstado();
+        }
+    }
+
+    private void actualizarEstadoInterno(JuegoEstado estado) {
+
+        this.saldoJugador = estado.getSaldoJugador();
+        this.juegoActivo = estado.isJuegoActivo();
+        this.manoActivaIndex = estado.getManoActivaIndex();
+
+        this.mazo = new Mazo();
+        this.manoCrupier = new Mano();
+        this.manoCrupier.setCartas(estado.getCartasCrupier());
+        this.manoCrupier.calcularPuntos();
+
+        this.manosJugador = new ArrayList<>();
+        for (Mano manoCargada : estado.getManosJugador()) {
+            Mano nuevaMano = new Mano();
+            nuevaMano.setCartas(manoCargada.getCartas());
+            nuevaMano.setApuesta(manoCargada.getApuesta());
+            nuevaMano.setCompletada(manoCargada.isCompletada());
+            nuevaMano.calcularPuntos();
+            this.manosJugador.add(nuevaMano);
+        }
+    }
+}

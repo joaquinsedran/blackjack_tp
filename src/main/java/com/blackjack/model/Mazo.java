@@ -18,9 +18,9 @@ public class Mazo {
 
         this.cartas = Arrays.stream(palos)
                 .flatMap(palo -> Arrays.stream(valores)
-                        .map(valor -> new Carta(palo, valor)) // Operación intermedia: mapea cada valor a una nueva Carta
+                        .map(valor -> new Carta(palo, valor))
                 )
-                .collect(Collectors.toList()); // Operación terminal: recolecta todas las Cartas en una lista
+                .collect(Collectors.toList());
 
         barajar();
     }
